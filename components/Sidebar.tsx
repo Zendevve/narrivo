@@ -1,5 +1,5 @@
 import React from 'react';
-import { Home, Library, PlusCircle, BookOpen, Settings, Heart } from 'lucide-react';
+import { Home, Library, PlusCircle, BookOpen, Settings, Heart, Radio } from 'lucide-react';
 
 interface SidebarProps {
   onAddBook: () => void;
@@ -9,55 +9,80 @@ interface SidebarProps {
 
 export const Sidebar: React.FC<SidebarProps> = ({ onAddBook, onGoHome, currentView }) => {
   return (
-    <div className="w-64 bg-black flex flex-col h-full flex-shrink-0 border-r border-[#282828]">
-      <div className="p-6">
-        <div className="flex items-center space-x-2 text-white mb-8">
-            <div className="w-8 h-8 bg-gradient-to-br from-[#1db954] to-[#1ed760] rounded-full flex items-center justify-center font-bold text-black italic">
-                N
+    <div className="w-72 bg-[#121214] flex flex-col h-full flex-shrink-0 border-r border-[#2A2A2D]">
+      <div className="p-8">
+        <div className="flex items-center space-x-3 text-white mb-10">
+            <div className="w-10 h-10 bg-[#CCFF00] rounded-xl flex items-center justify-center border-2 border-[#CCFF00] shadow-[0_0_15px_-5px_#CCFF00]">
+                <span className="text-black font-black text-xl italic">N</span>
             </div>
-            <span className="text-xl font-bold tracking-tight">Narrivo</span>
+            <span className="text-2xl font-black tracking-tighter uppercase">Narrivo</span>
         </div>
 
-        <div className="space-y-4">
+        <div className="space-y-2">
           <div 
             onClick={onGoHome}
-            className={`flex items-center space-x-4 cursor-pointer transition-colors ${currentView === 'LIBRARY' ? 'text-white' : 'text-gray-400 hover:text-white'}`}
+            className={`flex items-center space-x-4 px-4 py-3 rounded-xl cursor-pointer transition-all border ${
+              currentView === 'LIBRARY' 
+                ? 'bg-[#1C1C1E] border-[#333] text-[#CCFF00]' 
+                : 'border-transparent text-gray-400 hover:text-white hover:bg-[#1C1C1E]'
+            }`}
           >
-            <Home size={24} />
-            <span className="font-bold text-sm">Library</span>
+            <Home size={20} strokeWidth={2.5} />
+            <span className="font-bold text-sm uppercase tracking-wider">Library</span>
           </div>
-          <div className="flex items-center space-x-4 text-gray-400 hover:text-white cursor-pointer transition-colors">
-            <BookOpen size={24} />
-            <span className="font-bold text-sm">Now Reading</span>
+          
+          <div className={`flex items-center space-x-4 px-4 py-3 rounded-xl cursor-pointer transition-all border ${
+              currentView === 'READER'
+                ? 'bg-[#1C1C1E] border-[#333] text-[#9999FF]' 
+                : 'border-transparent text-gray-400 hover:text-white hover:bg-[#1C1C1E]'
+            }`}>
+            <BookOpen size={20} strokeWidth={2.5} />
+            <span className="font-bold text-sm uppercase tracking-wider">Now Reading</span>
           </div>
-          <div className="flex items-center space-x-4 text-gray-400 hover:text-white cursor-pointer transition-colors">
-            <Settings size={24} />
-            <span className="font-bold text-sm">Settings</span>
+          
+          <div className="flex items-center space-x-4 px-4 py-3 rounded-xl cursor-pointer transition-all border border-transparent text-gray-400 hover:text-white hover:bg-[#1C1C1E]">
+            <Settings size={20} strokeWidth={2.5} />
+            <span className="font-bold text-sm uppercase tracking-wider">Settings</span>
           </div>
         </div>
       </div>
 
-      <div className="mt-2 pt-4 px-2 border-t border-[#282828] flex-1 overflow-y-auto">
-        <div className="flex items-center justify-between px-4 mb-4 text-gray-400">
-          <span className="text-xs font-bold tracking-wider uppercase">Collections</span>
-          <button onClick={onAddBook} className="hover:text-white" title="Add New Book">
+      <div className="mt-2 pt-6 px-4 border-t border-[#2A2A2D] flex-1 overflow-y-auto">
+        <div className="flex items-center justify-between px-4 mb-6 text-gray-500">
+          <span className="text-[10px] font-black tracking-[0.2em] uppercase">Collections</span>
+          <button onClick={onAddBook} className="hover:text-[#CCFF00] transition-colors" title="Add New Book">
              <PlusCircle size={20} />
           </button>
         </div>
 
-        <div className="space-y-1 px-2">
-            <div className="flex items-center space-x-3 p-3 rounded-md cursor-pointer hover:bg-[#282828] text-gray-400 hover:text-white transition-colors">
-                <div className="bg-gradient-to-br from-purple-700 to-blue-500 w-6 h-6 rounded flex items-center justify-center">
-                    <Heart size={12} fill="white" className="text-white"/>
+        <div className="space-y-2">
+            <div className="flex items-center space-x-3 p-3 rounded-xl cursor-pointer bg-[#1C1C1E] border border-[#2A2A2D] group hover:border-[#CCFF00] transition-colors">
+                <div className="bg-[#FF3366] w-8 h-8 rounded-lg flex items-center justify-center">
+                    <Heart size={14} fill="white" className="text-white"/>
                 </div>
-                <span className="font-medium text-sm">Liked Books</span>
+                <div className="flex flex-col">
+                  <span className="font-bold text-xs uppercase text-white group-hover:text-[#CCFF00]">Liked Books</span>
+                  <span className="text-[10px] text-gray-500">12 items</span>
+                </div>
             </div>
-             <div className="p-3 rounded-md cursor-pointer hover:bg-[#282828] text-gray-400 hover:text-white transition-colors">
-                <span className="font-medium text-sm">Classics</span>
+            
+             <div className="flex items-center space-x-3 p-3 rounded-xl cursor-pointer hover:bg-[#1C1C1E] border border-transparent hover:border-[#2A2A2D] transition-colors text-gray-400 hover:text-white">
+                <div className="bg-[#9999FF] w-8 h-8 rounded-lg flex items-center justify-center text-black">
+                   <Radio size={14} strokeWidth={3} />
+                </div>
+                <span className="font-bold text-xs uppercase">Classics</span>
             </div>
-             <div className="p-3 rounded-md cursor-pointer hover:bg-[#282828] text-gray-400 hover:text-white transition-colors">
-                <span className="font-medium text-sm">Sci-Fi & Fantasy</span>
-            </div>
+        </div>
+      </div>
+      
+      {/* Sidebar Footer / User Mock */}
+      <div className="p-6 border-t border-[#2A2A2D]">
+        <div className="flex items-center space-x-3 p-3 bg-[#1C1C1E] rounded-xl border border-[#2A2A2D]">
+           <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-[#CCFF00] to-[#9999FF]"></div>
+           <div className="flex flex-col">
+             <span className="text-xs font-bold text-white uppercase">User Account</span>
+             <span className="text-[10px] text-gray-500">Pro Plan</span>
+           </div>
         </div>
       </div>
     </div>

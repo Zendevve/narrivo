@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Book } from '../types';
-import { Play, BookOpen, Headphones, Download, CheckCircle, Loader2 } from 'lucide-react';
+import { Play, BookOpen, Headphones, Download, CheckCircle, Loader2, Search } from 'lucide-react';
 
 interface LibraryProps {
   books: Book[];
@@ -20,58 +20,77 @@ const BookCard: React.FC<BookCardProps> = ({ book, isLocal, isDownloading, onSel
   return (
     <div 
       onClick={() => isLocal && onSelect(book)}
-      className={`group bg-[#181818] hover:bg-[#282828] rounded-md p-4 transition-all duration-300 relative ${isLocal ? 'cursor-pointer' : 'cursor-default'}`}
+      className={`group relative flex flex-col p-4 rounded-[2rem] transition-all duration-300 border border-[#2A2A2D] bg-[#1C1C1E] hover:bg-[#252528] ${isLocal ? 'cursor-pointer hover:-translate-y-1 hover:border-[#444]' : 'cursor-default opacity-90'}`}
     >
-      <div className="relative aspect-square w-full mb-4 shadow-lg rounded overflow-hidden">
+      <div className="relative aspect-[4/5] w-full mb-4 overflow-hidden rounded-2xl bg-[#121214]">
         <img 
           src={book.coverUrl} 
           alt={book.title} 
-          className={`w-full h-full object-cover transition-transform duration-500 ${isLocal ? 'group-hover:scale-105' : 'grayscale-[20%]'}`}
+          className={`w-full h-full object-cover transition-transform duration-500 ${isLocal ? 'group-hover:scale-110' : 'grayscale opacity-60'}`}
         />
         
         {/* Type Badge */}
-        <div className="absolute top-2 left-2">
-            {book.type === 'AUDIO' && <div className="bg-black/60 p-1.5 rounded-full backdrop-blur-sm"><Headphones size={12} className="text-white"/></div>}
-            {book.type === 'EBOOK' && <div className="bg-black/60 p-1.5 rounded-full backdrop-blur-sm"><BookOpen size={12} className="text-white"/></div>}
-            {book.type === 'HYBRID' && <div className="bg-black/60 p-1.5 rounded-full backdrop-blur-sm flex space-x-1"><Headphones size={12} className="text-white"/><BookOpen size={12} className="text-white"/></div>}
+        <div className="absolute top-3 left-3 flex gap-2">
+            {book.type === 'AUDIO' && <div className="bg-[#CCFF00] text-black p-2 rounded-lg font-bold shadow-lg"><Headphones size={14} strokeWidth={3}/></div>}
+            {book.type === 'EBOOK' && <div className="bg-[#9999FF] text-black p-2 rounded-lg font-bold shadow-lg"><BookOpen size={14} strokeWidth={3}/></div>}
+            {book.type === 'HYBRID' && (
+                <div className="bg-white text-black px-2 py-1.5 rounded-lg font-bold shadow-lg flex space-x-1 items-center">
+                    <Headphones size={12} strokeWidth={3}/>
+                    <span className="text-[10px] font-black">+</span>
+                    <BookOpen size={12} strokeWidth={3}/>
+                </div>
+            )}
         </div>
 
         {/* Action Overlay */}
         {isLocal ? (
            (book.type !== 'EBOOK') && (
-            <div className="absolute bottom-2 right-2 bg-[#1db954] rounded-full p-3 shadow-xl opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300 z-10 hover:scale-110">
-              <Play fill="black" size={20} className="text-black ml-0.5" />
+            <div className="absolute bottom-3 right-3">
+               <div className="bg-[#CCFF00] rounded-xl p-3 shadow-[0_4px_0_rgb(0,0,0)] translate-y-2 opacity-0 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300 hover:scale-105 active:translate-y-1 active:shadow-none">
+                  <Play fill="black" size={20} className="text-black ml-0.5" />
+               </div>
             </div>
           )
         ) : (
-          <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+          <div className="absolute inset-0 flex items-center justify-center">
              <button 
               onClick={(e) => onDownload(e, book.id)}
               disabled={isDownloading}
-              className="bg-white text-black font-bold py-2 px-4 rounded-full flex items-center space-x-2 hover:scale-105 transition-transform"
+              className="bg-white text-black font-black uppercase text-xs py-3 px-6 rounded-xl shadow-[0_4px_0_#999] hover:translate-y-[2px] hover:shadow-[0_2px_0_#999] active:translate-y-[4px] active:shadow-none transition-all flex items-center space-x-2"
              >
                {isDownloading ? (
                  <>
                   <Loader2 size={16} className="animate-spin"/>
-                  <span>Loading...</span>
+                  <span>Fetch</span>
                  </>
                ) : (
                  <>
-                  <Download size={16} />
-                  <span>Download</span>
+                  <Download size={16} strokeWidth={3} />
+                  <span>Get</span>
                  </>
                )}
              </button>
           </div>
         )}
       </div>
-      <h3 className="font-bold text-white truncate mb-1">{book.title}</h3>
-      <p className="text-sm text-gray-400 truncate">{book.author}</p>
-      {!isLocal && (
-           <div className="mt-2 text-xs text-[#1db954] font-medium flex items-center">
-               Free Public Domain
-           </div>
-      )}
+      
+      <div className="flex flex-col flex-1">
+          <h3 className="font-bold text-white leading-tight uppercase tracking-tight text-sm mb-1 line-clamp-2">{book.title}</h3>
+          <p className="text-xs font-medium text-gray-500 uppercase tracking-wider truncate mb-2">{book.author}</p>
+          
+          {!isLocal && (
+            <div className="mt-auto pt-3 border-t border-[#2A2A2D] flex items-center space-x-1 text-[#9999FF]">
+                <div className="w-1.5 h-1.5 rounded-full bg-[#9999FF]"></div>
+                <span className="text-[10px] font-bold uppercase tracking-widest">Public Domain</span>
+            </div>
+          )}
+          {isLocal && (
+             <div className="mt-auto pt-3 border-t border-[#2A2A2D] flex items-center space-x-1 text-[#CCFF00]">
+                <CheckCircle size={12} strokeWidth={3} />
+                <span className="text-[10px] font-bold uppercase tracking-widest">Ready</span>
+            </div>
+          )}
+      </div>
     </div>
   );
 };
@@ -80,7 +99,6 @@ export const Library: React.FC<LibraryProps> = ({ books, onSelectBook, onDownloa
   const [filter, setFilter] = useState<'ALL' | 'AUDIO' | 'EBOOK'>('ALL');
   const [downloadingIds, setDownloadingIds] = useState<Set<string>>(new Set());
 
-  // Filter Logic
   const filterType = (b: Book) => {
     if (filter === 'ALL') return true;
     if (filter === 'AUDIO') return b.type === 'AUDIO' || b.type === 'HYBRID';
@@ -90,11 +108,6 @@ export const Library: React.FC<LibraryProps> = ({ books, onSelectBook, onDownloa
 
   const localBooks = books.filter(b => b.isDownloaded && filterType(b));
   const publicBooks = books.filter(b => !b.isDownloaded && filterType(b));
-
-  const hour = new Date().getHours();
-  let greeting = 'Good evening';
-  if (hour < 12) greeting = 'Good morning';
-  else if (hour < 18) greeting = 'Good afternoon';
 
   const handleDownload = async (e: React.MouseEvent, bookId: string) => {
     e.stopPropagation();
@@ -107,51 +120,65 @@ export const Library: React.FC<LibraryProps> = ({ books, onSelectBook, onDownloa
     });
   };
 
+  const FilterButton = ({ label, type }: { label: string, type: 'ALL' | 'AUDIO' | 'EBOOK' }) => (
+      <button 
+        onClick={() => setFilter(type)}
+        className={`px-6 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all border-2 ${
+            filter === type 
+            ? 'bg-[#CCFF00] border-[#CCFF00] text-black shadow-[0_0_15px_-5px_#CCFF00]' 
+            : 'bg-transparent border-[#333] text-gray-400 hover:border-white hover:text-white'
+        }`}
+      >
+        {label}
+      </button>
+  );
+
   return (
-    <div className="flex-1 bg-gradient-to-b from-[#1e1e1e] to-[#121212] overflow-y-auto p-8 pb-32">
-      {/* Header & Filter */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
-        <h1 className="text-3xl font-bold text-white">{greeting}</h1>
-        <div className="flex space-x-2 bg-[#282828] p-1 rounded-full w-fit">
-          <button 
-            onClick={() => setFilter('ALL')}
-            className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all ${filter === 'ALL' ? 'bg-[#333] text-white' : 'text-gray-400 hover:text-white'}`}
-          >
-            All
-          </button>
-           <button 
-            onClick={() => setFilter('AUDIO')}
-            className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all ${filter === 'AUDIO' ? 'bg-[#333] text-white' : 'text-gray-400 hover:text-white'}`}
-          >
-            Audio
-          </button>
-           <button 
-            onClick={() => setFilter('EBOOK')}
-            className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all ${filter === 'EBOOK' ? 'bg-[#333] text-white' : 'text-gray-400 hover:text-white'}`}
-          >
-            Books
-          </button>
+    <div className="flex-1 bg-[#121214] overflow-y-auto p-8 pb-40">
+      {/* Header & Search */}
+      <div className="flex flex-col gap-8 mb-10">
+        <div className="flex items-center justify-between">
+            <h1 className="text-4xl md:text-5xl font-black text-white uppercase tracking-tighter">
+                Library
+                <span className="text-[#CCFF00] text-5xl">.</span>
+            </h1>
+            <div className="hidden md:flex items-center bg-[#1C1C1E] border border-[#2A2A2D] rounded-xl px-4 py-2 w-64">
+                <Search size={16} className="text-gray-500 mr-2" />
+                <input 
+                    type="text" 
+                    placeholder="SEARCH COLLECTION" 
+                    className="bg-transparent border-none outline-none text-xs font-bold text-white placeholder-gray-600 w-full uppercase"
+                />
+            </div>
+        </div>
+
+        <div className="flex space-x-3 overflow-x-auto pb-2">
+            <FilterButton label="All Items" type="ALL" />
+            <FilterButton label="Audio" type="AUDIO" />
+            <FilterButton label="Reads" type="EBOOK" />
         </div>
       </div>
       
-      {/* Empty State / Welcome */}
+      {/* Empty State */}
       {localBooks.length === 0 && (
-        <div className="mb-12 bg-gradient-to-r from-[#1db954]/10 to-transparent p-6 rounded-lg border border-[#1db954]/20">
-            <h2 className="text-2xl font-bold mb-2">Welcome to Narrivo</h2>
-            <p className="text-gray-300 max-w-2xl mb-4">
-                Your library is currently empty. Get started by downloading some of our curated public-domain classics. 
-                Enjoy fully offline playback and reading.
+        <div className="mb-12 bg-[#1C1C1E] border border-[#2A2A2D] p-8 rounded-[2rem] relative overflow-hidden">
+             <div className="absolute top-0 right-0 p-12 -mr-8 -mt-8 bg-[#9999FF] rounded-full blur-[80px] opacity-20"></div>
+            <h2 className="text-2xl font-black mb-3 text-white uppercase">Your shelf is empty</h2>
+            <p className="text-gray-400 max-w-lg mb-6 leading-relaxed">
+                Start your collection by downloading from our public domain archive. 
+                Everything is stored offline on your device.
             </p>
+            <div className="w-12 h-1 bg-[#CCFF00]"></div>
         </div>
       )}
 
       {/* Local Library Section */}
       {localBooks.length > 0 && (
         <div className="mb-12">
-            <h2 className="text-xl font-bold mb-4 flex items-center space-x-2">
-                <span>Your Library</span>
-                <CheckCircle size={16} className="text-[#1db954]" />
-            </h2>
+            <div className="flex items-center space-x-3 mb-6">
+                <div className="w-2 h-8 bg-[#CCFF00] rounded-full"></div>
+                <h2 className="text-xl font-black uppercase tracking-wider text-white">Local Storage</h2>
+            </div>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
                 {localBooks.map((book) => (
                     <BookCard 
@@ -170,7 +197,10 @@ export const Library: React.FC<LibraryProps> = ({ books, onSelectBook, onDownloa
       {/* Public Domain Section */}
       {publicBooks.length > 0 && (
         <div>
-            <h2 className="text-xl font-bold mb-4">Discover Classics (Free)</h2>
+             <div className="flex items-center space-x-3 mb-6">
+                <div className="w-2 h-8 bg-[#9999FF] rounded-full"></div>
+                <h2 className="text-xl font-black uppercase tracking-wider text-white">Public Archive</h2>
+            </div>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
                  {publicBooks.map((book) => (
                     <BookCard 
@@ -184,12 +214,6 @@ export const Library: React.FC<LibraryProps> = ({ books, onSelectBook, onDownloa
                 ))}
             </div>
         </div>
-      )}
-      
-      {localBooks.length === 0 && publicBooks.length === 0 && (
-          <div className="flex flex-col items-center justify-center h-48 text-gray-500">
-              <p>No books match the selected filter.</p>
-          </div>
       )}
     </div>
   );
