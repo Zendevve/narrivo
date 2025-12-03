@@ -6,8 +6,8 @@ export const MOCK_BOOKS: Book[] = [
     title: 'The Great Gatsby',
     author: 'F. Scott Fitzgerald',
     coverUrl: 'https://upload.wikimedia.org/wikipedia/commons/7/7a/The_Great_Gatsby_Cover_1925_Retouched.jpg',
-    // Updated to direct link to avoid redirects
-    audioUrl: 'https://ia800207.us.archive.org/27/items/great_gatsby_1603_librivox/greatgatsby_01_fitzgerald_128kb.mp3',
+    // Uses archive.org/download routing which handles server selection automatically
+    audioUrl: 'https://archive.org/download/great_gatsby_1603_librivox/greatgatsby_01_fitzgerald_128kb.mp3',
     duration: 1800,
     color: '#1a237e',
     type: 'HYBRID',
@@ -28,8 +28,8 @@ export const MOCK_BOOKS: Book[] = [
     title: 'Sherlock Holmes',
     author: 'Arthur Conan Doyle',
     coverUrl: 'https://upload.wikimedia.org/wikipedia/commons/b/b9/Caspar_David_Friedrich_-_Wanderer_above_the_sea_of_fog.jpg',
-    // Updated to direct link
-    audioUrl: 'https://ia801407.us.archive.org/23/items/adventures_sherlock_holmes_librivox/adventures_of_sherlock_holmes_01_doyle_128kb.mp3',
+    // Uses archive.org/download routing
+    audioUrl: 'https://archive.org/download/adventures_sherlock_holmes_librivox/adventures_of_sherlock_holmes_01_doyle_128kb.mp3',
     duration: 1500,
     color: '#3e2723',
     type: 'AUDIO',

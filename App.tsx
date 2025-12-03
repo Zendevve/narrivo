@@ -32,22 +32,26 @@ export default function App() {
     const updateDuration = () => setPlayerState(prev => ({ ...prev, duration: audio.duration }));
     const onEnded = () => setPlayerState(prev => ({ ...prev, isPlaying: false }));
     const onWaiting = () => setIsAudioLoading(true);
+    const onPlaying = () => setIsAudioLoading(false);
     const onCanPlay = () => setIsAudioLoading(false);
+    
     const onError = (e: any) => {
-      const error = e.target.error;
-      console.error("Audio Error Details:", {
-        code: error?.code,
-        message: error?.message,
-        src: audio.src
-      });
+      const error = audio.error;
+      console.error("Audio Error:", error);
       setIsAudioLoading(false);
       setPlayerState(prev => ({ ...prev, isPlaying: false }));
+      
+      // Optional: alert user or toast
+      if (error && error.code === 4) {
+          console.warn("Source not supported or file not found.");
+      }
     };
 
     audio.addEventListener('timeupdate', updateTime);
     audio.addEventListener('loadedmetadata', updateDuration);
     audio.addEventListener('ended', onEnded);
     audio.addEventListener('waiting', onWaiting);
+    audio.addEventListener('playing', onPlaying);
     audio.addEventListener('canplay', onCanPlay);
     audio.addEventListener('error', onError);
 
@@ -56,6 +60,7 @@ export default function App() {
       audio.removeEventListener('loadedmetadata', updateDuration);
       audio.removeEventListener('ended', onEnded);
       audio.removeEventListener('waiting', onWaiting);
+      audio.removeEventListener('playing', onPlaying);
       audio.removeEventListener('canplay', onCanPlay);
       audio.removeEventListener('error', onError);
     };
@@ -69,22 +74,22 @@ export default function App() {
     const playAudio = async () => {
       try {
         if (playerState.isPlaying && audio.paused) {
-          // Check if ready state is enough to play
-          if (audio.readyState >= 2) {
-             await audio.play();
-          } else {
-             // If not ready, play() will wait, but we ensure loading is triggered
-             await audio.play();
-          }
+           const playPromise = audio.play();
+           if (playPromise !== undefined) {
+             playPromise.catch((error) => {
+                if (error.name === 'NotAllowedError') {
+                    console.warn("Playback prevented. User interaction required.");
+                } else if (error.name !== 'AbortError') {
+                    console.error("Playback failed:", error);
+                }
+                setPlayerState(prev => ({ ...prev, isPlaying: false }));
+             });
+           }
         } else if (!playerState.isPlaying && !audio.paused) {
           audio.pause();
         }
       } catch (error) {
-        // AbortError is common if pausing quickly after playing, safe to ignore for UI
-        if (error instanceof Error && error.name !== 'AbortError') {
-             console.error("Playback failed:", error);
-             setPlayerState(prev => ({ ...prev, isPlaying: false }));
-        }
+         console.error("Audio control error:", error);
       }
     };
 
@@ -160,12 +165,14 @@ export default function App() {
   };
 
   return (
-    <div className="flex flex-col h-screen bg-black text-white overflow-hidden">
-      {/* Hidden Audio Element with crossorigin for better CORS handling */}
+    <div className="flex flex-col h-screen bg-[#121214] text-white overflow-hidden font-['Inter']">
+      {/* 
+         Removed crossOrigin="anonymous" to allow redirects from Archive.org 
+         without triggering strict CORS blocks on media resources.
+      */}
       <audio 
         ref={audioRef} 
         preload="auto" 
-        crossOrigin="anonymous"
       />
 
       <div className="flex flex-1 overflow-hidden">
