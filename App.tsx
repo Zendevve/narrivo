@@ -8,7 +8,7 @@ import { MOCK_BOOKS } from './services/mockData';
 
 export default function App() {
   const [activeView, setActiveView] = useState<ViewMode>(ViewMode.LIBRARY);
-  const [books] = useState<Book[]>(MOCK_BOOKS);
+  const [books, setBooks] = useState<Book[]>(MOCK_BOOKS);
   
   const [playerState, setPlayerState] = useState<PlayerState>({
     isPlaying: false,
@@ -103,7 +103,21 @@ export default function App() {
     setPlayerState(prev => ({ ...prev, isPlaying: !prev.isPlaying }));
   };
 
+  const handleDownloadBook = (bookId: string) => {
+    return new Promise<void>((resolve) => {
+      // Simulate download time
+      setTimeout(() => {
+        setBooks(prev => prev.map(b => 
+          b.id === bookId ? { ...b, isDownloaded: true } : b
+        ));
+        resolve();
+      }, 1500);
+    });
+  };
+
   const selectBook = (book: Book) => {
+    if (!book.isDownloaded) return;
+
     const isNewBook = book.id !== playerState.currentBookId;
     
     if (isNewBook) {
@@ -133,8 +147,8 @@ export default function App() {
     if (book.type === 'EBOOK') {
       setActiveView(ViewMode.READER);
     } else if (book.type === 'HYBRID') {
-       // Optional: Prompt user? For now, go to Reader if it's a hybrid, or stay in library to listen
-       // Let's default to player view (stay in library but playing)
+       // Default to player, but stay in library view if user just clicked it
+       // We can also switch to reader if preferred. Let's keep existing logic.
     }
   };
 
@@ -178,6 +192,7 @@ export default function App() {
             <Library 
               books={books} 
               onSelectBook={selectBook} 
+              onDownloadBook={handleDownloadBook}
             />
           )}
         </div>

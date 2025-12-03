@@ -11,6 +11,7 @@ export const MOCK_BOOKS: Book[] = [
     duration: 1800,
     color: '#1a237e',
     type: 'HYBRID',
+    isDownloaded: false,
     textContent: "In my younger and more vulnerable years my father gave me some advice that I've been turning over in my mind ever since. 'Whenever you feel like criticizing any one,' he told me, 'just remember that all the people in this world haven't had the advantages that you've had.'",
     syncData: [
       { start: 0, end: 4, text: "In my younger and more vulnerable years" },
@@ -32,6 +33,7 @@ export const MOCK_BOOKS: Book[] = [
     duration: 1500,
     color: '#3e2723',
     type: 'AUDIO',
+    isDownloaded: false,
     textContent: null,
   },
   {
@@ -43,6 +45,7 @@ export const MOCK_BOOKS: Book[] = [
     duration: 0,
     color: '#006064',
     type: 'EBOOK',
+    isDownloaded: false,
     textContent: "Alice was beginning to get very tired of sitting by her sister on the bank, and of having nothing to do: once or twice she had peeped into the book her sister was reading, but it had no pictures or conversations in it, 'and what is the use of a book,' thought Alice 'without pictures or conversation?'",
   }
 ];
