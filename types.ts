@@ -16,6 +16,7 @@ export interface Book {
   color: string; // Background gradient accent
   type: 'AUDIO' | 'EBOOK' | 'HYBRID';
   isDownloaded: boolean;
+  source: 'USER' | 'PUBLIC';
 }
 
 export interface PlayerState {

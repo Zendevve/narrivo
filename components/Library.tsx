@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import { Book } from '../types';
-import { Play, BookOpen, Headphones, Download, CheckCircle, Loader2, Search } from 'lucide-react';
+import { Play, BookOpen, Headphones, Download, CheckCircle, Loader2, Search, Upload, User } from 'lucide-react';
 
 interface LibraryProps {
   books: Book[];
   onSelectBook: (book: Book) => void;
   onDownloadBook: (bookId: string) => Promise<void>;
+  onImportBook: () => void;
 }
 
 interface BookCardProps {
@@ -41,6 +42,13 @@ const BookCard: React.FC<BookCardProps> = ({ book, isLocal, isDownloading, onSel
                 </div>
             )}
         </div>
+
+        {/* User Badge */}
+        {book.source === 'USER' && (
+             <div className="absolute top-3 right-3 bg-white text-black p-2 rounded-lg font-bold shadow-lg">
+                <User size={14} strokeWidth={3}/>
+            </div>
+        )}
 
         {/* Action Overlay */}
         {isLocal ? (
@@ -78,13 +86,21 @@ const BookCard: React.FC<BookCardProps> = ({ book, isLocal, isDownloading, onSel
           <h3 className="font-bold text-white leading-tight uppercase tracking-tight text-sm mb-1 line-clamp-2">{book.title}</h3>
           <p className="text-xs font-medium text-gray-500 uppercase tracking-wider truncate mb-2">{book.author}</p>
           
-          {!isLocal && (
+          {/* Footer Info */}
+          {book.source === 'USER' && (
+             <div className="mt-auto pt-3 border-t border-[#2A2A2D] flex items-center space-x-1 text-white">
+                <div className="w-1.5 h-1.5 rounded-full bg-white"></div>
+                <span className="text-[10px] font-bold uppercase tracking-widest">Imported</span>
+            </div>
+          )}
+          
+          {book.source === 'PUBLIC' && !isLocal && (
             <div className="mt-auto pt-3 border-t border-[#2A2A2D] flex items-center space-x-1 text-[#9999FF]">
                 <div className="w-1.5 h-1.5 rounded-full bg-[#9999FF]"></div>
                 <span className="text-[10px] font-bold uppercase tracking-widest">Public Domain</span>
             </div>
           )}
-          {isLocal && (
+          {book.source === 'PUBLIC' && isLocal && (
              <div className="mt-auto pt-3 border-t border-[#2A2A2D] flex items-center space-x-1 text-[#CCFF00]">
                 <CheckCircle size={12} strokeWidth={3} />
                 <span className="text-[10px] font-bold uppercase tracking-widest">Ready</span>
@@ -95,7 +111,7 @@ const BookCard: React.FC<BookCardProps> = ({ book, isLocal, isDownloading, onSel
   );
 };
 
-export const Library: React.FC<LibraryProps> = ({ books, onSelectBook, onDownloadBook }) => {
+export const Library: React.FC<LibraryProps> = ({ books, onSelectBook, onDownloadBook, onImportBook }) => {
   const [filter, setFilter] = useState<'ALL' | 'AUDIO' | 'EBOOK'>('ALL');
   const [downloadingIds, setDownloadingIds] = useState<Set<string>>(new Set());
 
@@ -106,8 +122,11 @@ export const Library: React.FC<LibraryProps> = ({ books, onSelectBook, onDownloa
     return true;
   };
 
-  const localBooks = books.filter(b => b.isDownloaded && filterType(b));
-  const publicBooks = books.filter(b => !b.isDownloaded && filterType(b));
+  const importedBooks = books.filter(b => b.source === 'USER' && filterType(b));
+  const localPublicBooks = books.filter(b => b.source === 'PUBLIC' && b.isDownloaded && filterType(b));
+  const availablePublicBooks = books.filter(b => b.source === 'PUBLIC' && !b.isDownloaded && filterType(b));
+
+  const hasAnyLocal = importedBooks.length > 0 || localPublicBooks.length > 0;
 
   const handleDownload = async (e: React.MouseEvent, bookId: string) => {
     e.stopPropagation();
@@ -137,18 +156,29 @@ export const Library: React.FC<LibraryProps> = ({ books, onSelectBook, onDownloa
     <div className="flex-1 bg-[#121214] overflow-y-auto p-8 pb-40">
       {/* Header & Search */}
       <div className="flex flex-col gap-8 mb-10">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <h1 className="text-4xl md:text-5xl font-black text-white uppercase tracking-tighter">
                 Library
                 <span className="text-[#CCFF00] text-5xl">.</span>
             </h1>
-            <div className="hidden md:flex items-center bg-[#1C1C1E] border border-[#2A2A2D] rounded-xl px-4 py-2 w-64">
-                <Search size={16} className="text-gray-500 mr-2" />
-                <input 
-                    type="text" 
-                    placeholder="SEARCH COLLECTION" 
-                    className="bg-transparent border-none outline-none text-xs font-bold text-white placeholder-gray-600 w-full uppercase"
-                />
+            
+            <div className="flex items-center gap-3">
+                 <button 
+                    onClick={onImportBook}
+                    className="flex items-center space-x-2 bg-white text-black px-4 py-2 rounded-xl font-bold uppercase text-xs tracking-wider border-2 border-white hover:bg-gray-200 transition-colors"
+                >
+                    <Upload size={16} strokeWidth={3}/>
+                    <span className="hidden md:inline">Import</span>
+                </button>
+                
+                <div className="hidden md:flex items-center bg-[#1C1C1E] border border-[#2A2A2D] rounded-xl px-4 py-2 w-64">
+                    <Search size={16} className="text-gray-500 mr-2" />
+                    <input 
+                        type="text" 
+                        placeholder="SEARCH COLLECTION" 
+                        className="bg-transparent border-none outline-none text-xs font-bold text-white placeholder-gray-600 w-full uppercase"
+                    />
+                </div>
             </div>
         </div>
 
@@ -160,27 +190,33 @@ export const Library: React.FC<LibraryProps> = ({ books, onSelectBook, onDownloa
       </div>
       
       {/* Empty State */}
-      {localBooks.length === 0 && (
-        <div className="mb-12 bg-[#1C1C1E] border border-[#2A2A2D] p-8 rounded-[2rem] relative overflow-hidden">
+      {!hasAnyLocal && (
+        <div className="mb-12 bg-[#1C1C1E] border border-[#2A2A2D] p-8 rounded-[2rem] relative overflow-hidden flex flex-col items-start">
              <div className="absolute top-0 right-0 p-12 -mr-8 -mt-8 bg-[#9999FF] rounded-full blur-[80px] opacity-20"></div>
             <h2 className="text-2xl font-black mb-3 text-white uppercase">Your shelf is empty</h2>
             <p className="text-gray-400 max-w-lg mb-6 leading-relaxed">
-                Start your collection by downloading from our public domain archive. 
-                Everything is stored offline on your device.
+                Import your own audiobooks and ebooks, or start your collection by downloading from our public domain archive.
             </p>
-            <div className="w-12 h-1 bg-[#CCFF00]"></div>
+            <div className="flex space-x-4">
+                <button 
+                    onClick={onImportBook}
+                    className="bg-[#CCFF00] text-black px-6 py-3 rounded-xl font-black uppercase text-xs tracking-wider shadow-[0_4px_0_#999] active:shadow-none active:translate-y-1 transition-all"
+                >
+                    Import Files
+                </button>
+            </div>
         </div>
       )}
 
-      {/* Local Library Section */}
-      {localBooks.length > 0 && (
+      {/* Imported Books Section */}
+      {importedBooks.length > 0 && (
         <div className="mb-12">
             <div className="flex items-center space-x-3 mb-6">
-                <div className="w-2 h-8 bg-[#CCFF00] rounded-full"></div>
-                <h2 className="text-xl font-black uppercase tracking-wider text-white">Local Storage</h2>
+                <div className="w-2 h-8 bg-white rounded-full"></div>
+                <h2 className="text-xl font-black uppercase tracking-wider text-white">Your Imports</h2>
             </div>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-                {localBooks.map((book) => (
+                {importedBooks.map((book) => (
                     <BookCard 
                       key={book.id} 
                       book={book} 
@@ -194,15 +230,37 @@ export const Library: React.FC<LibraryProps> = ({ books, onSelectBook, onDownloa
         </div>
       )}
 
-      {/* Public Domain Section */}
-      {publicBooks.length > 0 && (
+      {/* Local Public Books Section */}
+      {localPublicBooks.length > 0 && (
+        <div className="mb-12">
+            <div className="flex items-center space-x-3 mb-6">
+                <div className="w-2 h-8 bg-[#CCFF00] rounded-full"></div>
+                <h2 className="text-xl font-black uppercase tracking-wider text-white">Local Storage</h2>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+                {localPublicBooks.map((book) => (
+                    <BookCard 
+                      key={book.id} 
+                      book={book} 
+                      isLocal={true} 
+                      isDownloading={downloadingIds.has(book.id)}
+                      onSelect={onSelectBook}
+                      onDownload={handleDownload}
+                    />
+                ))}
+            </div>
+        </div>
+      )}
+
+      {/* Public Domain Available Section */}
+      {availablePublicBooks.length > 0 && (
         <div>
              <div className="flex items-center space-x-3 mb-6">
                 <div className="w-2 h-8 bg-[#9999FF] rounded-full"></div>
                 <h2 className="text-xl font-black uppercase tracking-wider text-white">Public Archive</h2>
             </div>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-                 {publicBooks.map((book) => (
+                 {availablePublicBooks.map((book) => (
                     <BookCard 
                       key={book.id} 
                       book={book} 

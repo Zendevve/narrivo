@@ -21,6 +21,8 @@ export default function App() {
   const [isAudioLoading, setIsAudioLoading] = useState(false);
 
   const audioRef = useRef<HTMLAudioElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const currentBook = books.find(b => b.id === playerState.currentBookId) || null;
 
   // Audio Event Listeners
@@ -41,7 +43,6 @@ export default function App() {
       setIsAudioLoading(false);
       setPlayerState(prev => ({ ...prev, isPlaying: false }));
       
-      // Optional: alert user or toast
       if (error && error.code === 4) {
           console.warn("Source not supported or file not found.");
       }
@@ -120,6 +121,59 @@ export default function App() {
     });
   };
 
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (!files || files.length === 0) return;
+
+    const newBooks: Book[] = [];
+    const colors = ['#CCFF00', '#9999FF', '#FF3366', '#33FFFF', '#FFFF33'];
+
+    Array.from(files).forEach((file: File, index) => {
+      const isAudio = file.type.startsWith('audio');
+      const isText = file.type === 'text/plain' || file.name.endsWith('.txt');
+      
+      const bookId = `user-${Date.now()}-${index}`;
+      const randomColor = colors[Math.floor(Math.random() * colors.length)];
+
+      const book: Book = {
+        id: bookId,
+        title: file.name.replace(/\.[^/.]+$/, ""),
+        author: 'Imported File',
+        coverUrl: `https://ui-avatars.com/api/?name=${file.name}&background=random&size=300`, // Simple placeholder
+        audioUrl: isAudio ? URL.createObjectURL(file) : null,
+        textContent: isText ? "Loading content..." : "Binary file content not displayed in preview.",
+        duration: 0,
+        color: randomColor,
+        type: isAudio ? 'AUDIO' : 'EBOOK',
+        isDownloaded: true,
+        source: 'USER'
+      };
+
+      if (isText) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          setBooks(prev => prev.map(b => 
+            b.id === bookId ? { ...b, textContent: e.target?.result as string } : b
+          ));
+        };
+        reader.readAsText(file);
+      }
+
+      newBooks.push(book);
+    });
+
+    setBooks(prev => [...newBooks, ...prev]);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const triggerImport = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
+    }
+  };
+
   const selectBook = (book: Book) => {
     if (!book.isDownloaded) return;
 
@@ -152,8 +206,7 @@ export default function App() {
     if (book.type === 'EBOOK') {
       setActiveView(ViewMode.READER);
     } else if (book.type === 'HYBRID') {
-       // Default to player, but stay in library view if user just clicked it
-       // We can also switch to reader if preferred. Let's keep existing logic.
+       // Default to player
     }
   };
 
@@ -166,20 +219,21 @@ export default function App() {
 
   return (
     <div className="flex flex-col h-screen bg-[#121214] text-white overflow-hidden font-['Inter']">
-      {/* 
-         Removed crossOrigin="anonymous" to allow redirects from Archive.org 
-         without triggering strict CORS blocks on media resources.
-      */}
-      <audio 
-        ref={audioRef} 
-        preload="auto" 
+      <audio ref={audioRef} preload="auto" />
+      <input 
+        type="file" 
+        multiple 
+        accept="audio/*,.txt" 
+        className="hidden" 
+        ref={fileInputRef}
+        onChange={handleFileUpload}
       />
 
       <div className="flex flex-1 overflow-hidden">
         {/* Sidebar */}
         <div className={`hidden md:block ${activeView === ViewMode.READER ? 'hidden lg:block' : ''}`}>
            <Sidebar 
-            onAddBook={() => alert("File import feature coming soon!")} 
+            onAddBook={triggerImport} 
             onGoHome={() => setActiveView(ViewMode.LIBRARY)}
             currentView={activeView}
           />
@@ -200,6 +254,7 @@ export default function App() {
               books={books} 
               onSelectBook={selectBook} 
               onDownloadBook={handleDownloadBook}
+              onImportBook={triggerImport}
             />
           )}
         </div>
