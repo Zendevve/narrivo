@@ -1,0 +1,5 @@
+{
+  "name": "Narrivo",
+  "description": "An offline-first Audiobook and eBook player.",
+  "requestFramePermissions": []
+}
