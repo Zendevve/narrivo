@@ -121,6 +121,29 @@ export default function App() {
     });
   };
 
+  const handleDeleteBook = (bookId: string) => {
+    setBooks(prev => {
+      const book = prev.find(b => b.id === bookId);
+      if (!book) return prev;
+
+      if (book.source === 'USER') {
+        // Permanently delete imported files
+        return prev.filter(b => b.id !== bookId);
+      } else {
+        // Just mark public domain books as not downloaded
+        return prev.map(b => b.id === bookId ? { ...b, isDownloaded: false } : b);
+      }
+    });
+
+    // If the deleted book was playing, stop playback
+    if (playerState.currentBookId === bookId) {
+      setPlayerState(prev => ({ ...prev, isPlaying: false, currentBookId: null }));
+      if (audioRef.current) {
+        audioRef.current.src = "";
+      }
+    }
+  };
+
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
     if (!files || files.length === 0) return;
@@ -134,12 +157,18 @@ export default function App() {
       
       const bookId = `user-${Date.now()}-${index}`;
       const randomColor = colors[Math.floor(Math.random() * colors.length)];
+      
+      // Improve metadata: Remove underscores/hyphens and capitalize
+      const rawName = file.name.replace(/\.[^/.]+$/, "");
+      const cleanTitle = rawName
+        .replace(/[-_]/g, " ")
+        .replace(/\b\w/g, l => l.toUpperCase());
 
       const book: Book = {
         id: bookId,
-        title: file.name.replace(/\.[^/.]+$/, ""),
+        title: cleanTitle,
         author: 'Imported File',
-        coverUrl: `https://ui-avatars.com/api/?name=${file.name}&background=random&size=300`, // Simple placeholder
+        coverUrl: `https://ui-avatars.com/api/?name=${encodeURIComponent(cleanTitle)}&background=random&size=300`,
         audioUrl: isAudio ? URL.createObjectURL(file) : null,
         textContent: isText ? "Loading content..." : "Binary file content not displayed in preview.",
         duration: 0,
@@ -254,6 +283,7 @@ export default function App() {
               books={books} 
               onSelectBook={selectBook} 
               onDownloadBook={handleDownloadBook}
+              onDeleteBook={handleDeleteBook}
               onImportBook={triggerImport}
             />
           )}

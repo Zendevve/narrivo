@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
 import { Book } from '../types';
-import { Play, BookOpen, Headphones, Download, CheckCircle, Loader2, Search, Upload, User } from 'lucide-react';
+import { Play, BookOpen, Headphones, Download, CheckCircle, Loader2, Search, Upload, Trash2 } from 'lucide-react';
 
 interface LibraryProps {
   books: Book[];
   onSelectBook: (book: Book) => void;
   onDownloadBook: (bookId: string) => Promise<void>;
   onImportBook: () => void;
+  onDeleteBook: (bookId: string) => void;
 }
 
 interface BookCardProps {
@@ -15,9 +16,10 @@ interface BookCardProps {
   isDownloading: boolean;
   onSelect: (book: Book) => void;
   onDownload: (e: React.MouseEvent, bookId: string) => void;
+  onDelete: (e: React.MouseEvent, bookId: string) => void;
 }
 
-const BookCard: React.FC<BookCardProps> = ({ book, isLocal, isDownloading, onSelect, onDownload }) => {
+const BookCard: React.FC<BookCardProps> = ({ book, isLocal, isDownloading, onSelect, onDownload, onDelete }) => {
   return (
     <div 
       onClick={() => isLocal && onSelect(book)}
@@ -43,10 +45,14 @@ const BookCard: React.FC<BookCardProps> = ({ book, isLocal, isDownloading, onSel
             )}
         </div>
 
-        {/* User Badge */}
-        {book.source === 'USER' && (
-             <div className="absolute top-3 right-3 bg-white text-black p-2 rounded-lg font-bold shadow-lg">
-                <User size={14} strokeWidth={3}/>
+        {/* Delete Button (Local Only) - Replaces User Badge */}
+        {isLocal && (
+             <div 
+               onClick={(e) => onDelete(e, book.id)}
+               className="absolute top-3 right-3 bg-black/40 hover:bg-[#FF3366] text-white hover:text-white backdrop-blur-md p-2 rounded-lg font-bold shadow-lg transition-colors cursor-pointer"
+               title="Delete Book"
+             >
+                <Trash2 size={14} strokeWidth={3}/>
             </div>
         )}
 
@@ -111,7 +117,7 @@ const BookCard: React.FC<BookCardProps> = ({ book, isLocal, isDownloading, onSel
   );
 };
 
-export const Library: React.FC<LibraryProps> = ({ books, onSelectBook, onDownloadBook, onImportBook }) => {
+export const Library: React.FC<LibraryProps> = ({ books, onSelectBook, onDownloadBook, onImportBook, onDeleteBook }) => {
   const [filter, setFilter] = useState<'ALL' | 'AUDIO' | 'EBOOK'>('ALL');
   const [downloadingIds, setDownloadingIds] = useState<Set<string>>(new Set());
 
@@ -137,6 +143,14 @@ export const Library: React.FC<LibraryProps> = ({ books, onSelectBook, onDownloa
         next.delete(bookId);
         return next;
     });
+  };
+
+  const handleDelete = (e: React.MouseEvent, bookId: string) => {
+    e.stopPropagation();
+    // In a real app, use a nicer custom modal, but this works for MVP
+    if (window.confirm("Are you sure you want to delete this book?")) {
+        onDeleteBook(bookId);
+    }
   };
 
   const FilterButton = ({ label, type }: { label: string, type: 'ALL' | 'AUDIO' | 'EBOOK' }) => (
@@ -224,6 +238,7 @@ export const Library: React.FC<LibraryProps> = ({ books, onSelectBook, onDownloa
                       isDownloading={downloadingIds.has(book.id)}
                       onSelect={onSelectBook}
                       onDownload={handleDownload}
+                      onDelete={handleDelete}
                     />
                 ))}
             </div>
@@ -246,6 +261,7 @@ export const Library: React.FC<LibraryProps> = ({ books, onSelectBook, onDownloa
                       isDownloading={downloadingIds.has(book.id)}
                       onSelect={onSelectBook}
                       onDownload={handleDownload}
+                      onDelete={handleDelete}
                     />
                 ))}
             </div>
@@ -268,6 +284,7 @@ export const Library: React.FC<LibraryProps> = ({ books, onSelectBook, onDownloa
                       isDownloading={downloadingIds.has(book.id)}
                       onSelect={onSelectBook}
                       onDownload={handleDownload}
+                      onDelete={handleDelete}
                     />
                 ))}
             </div>
