@@ -44,7 +44,12 @@
 │   ├── /utils
 │   │   ├── metadata.ts        ✅ Filename parsing
 │   │   └── matching.ts        ✅ File matching
-│   ├── /services              🚧 Coming next
+│   ├── /services
+│   │   ├── index.ts           ✅ Barrel export
+│   │   ├── storageService.ts  ✅ Bookmarks/positions
+│   │   ├── fileService.ts     ✅ File picking
+│   │   ├── audioService.ts    ✅ Audio playback
+│   │   └── downloadService.ts ✅ Public domain
 │   ├── /screens               🚧 Coming next
 │   └── /components            🚧 Coming next
 │
