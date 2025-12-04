@@ -20,19 +20,15 @@ export const LibraryScreen: React.FC<LibraryScreenProps> = ({ onSelectBook, onOp
   const [isImporting, setIsImporting] = useState(false);
   const [initialized, setInitialized] = useState(false);
 
-  // Initialize public domain catalog on mount (once only)
   useEffect(() => {
     if (initialized) return;
-
     const catalog = getPublicDomainCatalog();
     const currentBooks = useBooksStore.getState().books;
-
     catalog.forEach((book) => {
       if (!currentBooks.find((b) => b.id === book.id)) {
         addBook(book);
       }
     });
-
     setInitialized(true);
   }, [initialized, addBook]);
 
@@ -73,7 +69,6 @@ export const LibraryScreen: React.FC<LibraryScreenProps> = ({ onSelectBook, onOp
   const handleDownload = async (bookId: string) => {
     const book = books.find((b) => b.id === bookId);
     if (!book) return;
-
     setDownloadingIds((prev) => new Set(prev).add(bookId));
     try {
       await downloadPublicDomainBook(book);
@@ -88,7 +83,7 @@ export const LibraryScreen: React.FC<LibraryScreenProps> = ({ onSelectBook, onOp
   };
 
   const handleDelete = (bookId: string) => {
-    if (window.confirm('Are you sure you want to delete this book?')) {
+    if (window.confirm('Delete this book?')) {
       deleteBook(bookId);
     }
   };
@@ -108,13 +103,11 @@ export const LibraryScreen: React.FC<LibraryScreenProps> = ({ onSelectBook, onOp
       {/* Header */}
       <div style={styles.header}>
         <h1 style={styles.title}>
-          Library<span style={styles.titleAccent}>.</span>
+          Library<span style={styles.accent}>.</span>
         </h1>
-        <div style={styles.headerActions}>
-          <button style={styles.importButton} onClick={handleImport} disabled={isImporting}>
-            {isImporting ? '...' : '+ Import'}
-          </button>
-        </div>
+        <button style={styles.importBtn} onClick={handleImport} disabled={isImporting}>
+          {isImporting ? '...' : '+'}
+        </button>
       </div>
 
       {/* Filters */}
@@ -123,101 +116,75 @@ export const LibraryScreen: React.FC<LibraryScreenProps> = ({ onSelectBook, onOp
           <button
             key={type}
             style={{
-              ...styles.filterButton,
-              ...(filter === type ? styles.filterButtonActive : {}),
+              ...styles.filterBtn,
+              ...(filter === type ? styles.filterActive : {}),
             }}
             onClick={() => setFilter(type)}
           >
-            {type === 'ALL' ? 'All Items' : type === 'AUDIO' ? 'Audio' : 'Reads'}
+            {type === 'ALL' ? 'All' : type === 'AUDIO' ? '🎵' : '📖'}
           </button>
         ))}
       </div>
 
       {/* Empty State */}
       {!hasAnyLocal && (
-        <div style={styles.emptyState}>
+        <div style={styles.empty}>
+          <div style={styles.emptyIcon}>📚</div>
           <h2 style={styles.emptyTitle}>Your shelf is empty</h2>
-          <p style={styles.emptyText}>
-            Import your own audiobooks and ebooks, or download from our public domain archive.
-          </p>
-          <button style={styles.primaryButton} onClick={handleImport}>
+          <p style={styles.emptyText}>Import audiobooks & ebooks, or download from our archive.</p>
+          <button style={styles.primaryBtn} onClick={handleImport}>
             Import Files
           </button>
         </div>
       )}
 
-      {/* Imported Books */}
+      {/* Book Sections */}
       {importedBooks.length > 0 && (
-        <Section title="Your Imports" accentColor={colors.white}>
-          <BookGrid
-            books={importedBooks}
-            downloadingIds={downloadingIds}
-            onSelect={handleSelectBook}
-            onDownload={handleDownload}
-            onDelete={handleDelete}
-          />
+        <Section title="Imports" color={colors.white}>
+          <Grid books={importedBooks} downloading={downloadingIds} onSelect={handleSelectBook} onDownload={handleDownload} onDelete={handleDelete} />
         </Section>
       )}
 
-      {/* Local Public Books */}
       {localPublicBooks.length > 0 && (
-        <Section title="Local Storage" accentColor={colors.lime}>
-          <BookGrid
-            books={localPublicBooks}
-            downloadingIds={downloadingIds}
-            onSelect={handleSelectBook}
-            onDownload={handleDownload}
-            onDelete={handleDelete}
-          />
+        <Section title="Downloaded" color={colors.lime}>
+          <Grid books={localPublicBooks} downloading={downloadingIds} onSelect={handleSelectBook} onDownload={handleDownload} onDelete={handleDelete} />
         </Section>
       )}
 
-      {/* Available Public Books */}
       {availablePublicBooks.length > 0 && (
-        <Section title="Public Archive" accentColor={colors.periwinkle}>
-          <BookGrid
-            books={availablePublicBooks}
-            downloadingIds={downloadingIds}
-            onSelect={handleSelectBook}
-            onDownload={handleDownload}
-            onDelete={handleDelete}
-          />
+        <Section title="Archive" color={colors.periwinkle}>
+          <Grid books={availablePublicBooks} downloading={downloadingIds} onSelect={handleSelectBook} onDownload={handleDownload} onDelete={handleDelete} />
         </Section>
       )}
     </div>
   );
 };
 
-// Sub-components
-const Section: React.FC<{ title: string; accentColor: string; children: React.ReactNode }> = ({
-  title,
-  accentColor,
-  children,
-}) => (
+// Section component
+const Section: React.FC<{ title: string; color: string; children: React.ReactNode }> = ({ title, color, children }) => (
   <div style={styles.section}>
     <div style={styles.sectionHeader}>
-      <div style={{ ...styles.sectionAccent, backgroundColor: accentColor }} />
-      <h2 style={styles.sectionTitle}>{title}</h2>
+      <div style={{ ...styles.sectionDot, backgroundColor: color }} />
+      <h3 style={styles.sectionTitle}>{title}</h3>
     </div>
     {children}
   </div>
 );
 
-interface BookGridProps {
+// Grid component
+const Grid: React.FC<{
   books: Book[];
-  downloadingIds: Set<string>;
-  onSelect: (book: Book) => void;
-  onDownload: (bookId: string) => void;
-  onDelete: (bookId: string) => void;
-}
-
-const BookGrid: React.FC<BookGridProps> = ({ books, downloadingIds, onSelect, onDownload, onDelete }) => (
+  downloading: Set<string>;
+  onSelect: (b: Book) => void;
+  onDownload: (id: string) => void;
+  onDelete: (id: string) => void;
+}> = ({ books, downloading, onSelect, onDownload, onDelete }) => (
   <div style={styles.grid}>
     {books.map((book) => (
-      <BookCard
+      <Card
         key={book.id}
         book={book}
-        isDownloading={downloadingIds.has(book.id)}
+        isDownloading={downloading.has(book.id)}
         onSelect={() => onSelect(book)}
         onDownload={() => onDownload(book.id)}
         onDelete={() => onDelete(book.id)}
@@ -226,147 +193,130 @@ const BookGrid: React.FC<BookGridProps> = ({ books, downloadingIds, onSelect, on
   </div>
 );
 
-interface BookCardProps {
+// Card component
+const Card: React.FC<{
   book: Book;
   isDownloading: boolean;
   onSelect: () => void;
   onDownload: () => void;
   onDelete: () => void;
-}
-
-const BookCard: React.FC<BookCardProps> = ({ book, isDownloading, onSelect, onDownload, onDelete }) => {
+}> = ({ book, isDownloading, onSelect, onDownload, onDelete }) => {
   const isLocal = book.isDownloaded;
 
-  const getTypeBadge = () => {
-    switch (book.type) {
-      case 'AUDIO':
-        return <span style={{ ...styles.badge, backgroundColor: colors.lime }}>🎵</span>;
-      case 'EBOOK':
-        return <span style={{ ...styles.badge, backgroundColor: colors.periwinkle }}>📖</span>;
-      case 'HYBRID':
-        return <span style={{ ...styles.badge, backgroundColor: colors.white, color: colors.black }}>🎵📖</span>;
-    }
-  };
-
   return (
-    <div
-      style={{
-        ...styles.card,
-        opacity: isLocal ? 1 : 0.8,
-        cursor: isLocal ? 'pointer' : 'default',
-      }}
-      onClick={isLocal ? onSelect : undefined}
-    >
+    <div style={{ ...styles.card, opacity: isLocal ? 1 : 0.7 }} onClick={isLocal ? onSelect : undefined}>
       <div style={styles.cardCover}>
-        <img src={book.coverUrl} alt={book.title} style={styles.coverImage} />
-        <div style={styles.typeBadge}>{getTypeBadge()}</div>
-        {isLocal && (
-          <button style={styles.deleteButton} onClick={(e) => { e.stopPropagation(); onDelete(); }}>
-            🗑
+        <img src={book.coverUrl} alt="" style={styles.cardImg} />
+
+        {/* Type badge */}
+        <div style={styles.badge}>
+          {book.type === 'AUDIO' && <span style={{ ...styles.badgeIcon, backgroundColor: colors.lime }}>🎵</span>}
+          {book.type === 'EBOOK' && <span style={{ ...styles.badgeIcon, backgroundColor: colors.periwinkle }}>📖</span>}
+          {book.type === 'HYBRID' && <span style={{ ...styles.badgeIcon, backgroundColor: colors.white }}>🎵📖</span>}
+        </div>
+
+        {/* Action button */}
+        {!isLocal ? (
+          <button style={styles.downloadBtn} onClick={(e) => { e.stopPropagation(); onDownload(); }} disabled={isDownloading}>
+            {isDownloading ? '...' : '↓'}
           </button>
-        )}
-        {!isLocal && (
-          <button
-            style={styles.downloadButton}
-            onClick={(e) => { e.stopPropagation(); onDownload(); }}
-            disabled={isDownloading}
-          >
-            {isDownloading ? '...' : '↓ Get'}
+        ) : (
+          <button style={styles.deleteBtn} onClick={(e) => { e.stopPropagation(); onDelete(); }}>
+            ×
           </button>
         )}
       </div>
-      <h3 style={styles.cardTitle}>{book.title}</h3>
-      <p style={styles.cardAuthor}>{book.author}</p>
-      {book.source === 'USER' && <span style={styles.sourceTag}>Imported</span>}
-      {book.source === 'PUBLIC' && isLocal && <span style={{ ...styles.sourceTag, color: colors.lime }}>✓ Ready</span>}
+      <div style={styles.cardTitle}>{book.title}</div>
+      <div style={styles.cardAuthor}>{book.author}</div>
     </div>
   );
 };
 
-// Styles - using inline values to avoid typography spread issues
+// Mobile-first styles
 const styles: Record<string, React.CSSProperties> = {
   container: {
     flex: 1,
     backgroundColor: colors.bg,
-    padding: spacing.lg,
+    padding: spacing.md,
+    paddingBottom: 80, // Space for BottomPlayer
     overflowY: 'auto',
-    paddingBottom: 160,
+    WebkitOverflowScrolling: 'touch',
   },
   header: {
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: spacing.lg,
+    marginBottom: spacing.md,
   },
   title: {
-    fontSize: 48,
+    fontSize: 28,
     fontWeight: 900,
     textTransform: 'uppercase',
-    letterSpacing: -2,
+    letterSpacing: -1,
     color: colors.white,
     margin: 0,
   },
-  titleAccent: {
+  accent: {
     color: colors.lime,
   },
-  headerActions: {
-    display: 'flex',
-    gap: spacing.sm,
-  },
-  importButton: {
+  importBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: borderRadius.md,
     backgroundColor: colors.white,
     color: colors.black,
     border: 'none',
-    padding: `${spacing.sm}px ${spacing.md}px`,
-    borderRadius: borderRadius.md,
+    fontSize: 24,
     fontWeight: 700,
-    textTransform: 'uppercase',
-    fontSize: 12,
     cursor: 'pointer',
   },
   filters: {
     display: 'flex',
-    gap: spacing.sm,
-    marginBottom: spacing.xl,
+    gap: spacing.xs,
+    marginBottom: spacing.lg,
   },
-  filterButton: {
+  filterBtn: {
+    flex: 1,
+    padding: `${spacing.sm}px`,
+    borderRadius: borderRadius.md,
+    border: `2px solid ${colors.border}`,
     backgroundColor: 'transparent',
     color: colors.gray,
-    border: `2px solid ${colors.border}`,
-    padding: `${spacing.sm}px ${spacing.md}px`,
-    borderRadius: borderRadius.md,
+    fontSize: 14,
     fontWeight: 700,
-    textTransform: 'uppercase',
-    fontSize: 11,
-    letterSpacing: 2,
     cursor: 'pointer',
   },
-  filterButtonActive: {
+  filterActive: {
     backgroundColor: colors.lime,
-    color: colors.black,
     borderColor: colors.lime,
+    color: colors.black,
   },
-  emptyState: {
-    backgroundColor: colors.card,
-    border: `1px solid ${colors.border}`,
-    borderRadius: borderRadius.xxl,
+  empty: {
+    textAlign: 'center',
     padding: spacing.xl,
-    marginBottom: spacing.xl,
+    backgroundColor: colors.card,
+    borderRadius: borderRadius.xxl,
+    border: `1px solid ${colors.border}`,
+  },
+  emptyIcon: {
+    fontSize: 48,
+    marginBottom: spacing.md,
   },
   emptyTitle: {
-    fontSize: 32,
+    fontSize: 20,
     fontWeight: 900,
     textTransform: 'uppercase',
     color: colors.white,
+    margin: 0,
     marginBottom: spacing.sm,
-    marginTop: 0,
   },
   emptyText: {
+    fontSize: 13,
     color: colors.gray,
     marginBottom: spacing.lg,
-    maxWidth: 400,
+    lineHeight: 1.5,
   },
-  primaryButton: {
+  primaryBtn: {
     backgroundColor: colors.lime,
     color: colors.black,
     border: 'none',
@@ -377,10 +327,9 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: 12,
     letterSpacing: 1,
     cursor: 'pointer',
-    boxShadow: '0 4px 0 #999',
   },
   section: {
-    marginBottom: spacing.xl,
+    marginBottom: spacing.lg,
   },
   sectionHeader: {
     display: 'flex',
@@ -388,106 +337,93 @@ const styles: Record<string, React.CSSProperties> = {
     gap: spacing.sm,
     marginBottom: spacing.md,
   },
-  sectionAccent: {
+  sectionDot: {
     width: 8,
-    height: 32,
+    height: 8,
     borderRadius: 4,
   },
   sectionTitle: {
-    fontSize: 20,
+    fontSize: 14,
     fontWeight: 700,
     textTransform: 'uppercase',
-    letterSpacing: 1,
+    letterSpacing: 2,
     color: colors.white,
     margin: 0,
   },
   grid: {
     display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))',
-    gap: spacing.md,
+    gridTemplateColumns: 'repeat(2, 1fr)', // 2 columns for mobile
+    gap: spacing.sm,
   },
   card: {
     backgroundColor: colors.card,
-    border: `1px solid ${colors.border}`,
-    borderRadius: borderRadius.xxl,
-    padding: spacing.md,
-    transition: 'transform 0.2s, border-color 0.2s',
+    borderRadius: borderRadius.lg,
+    padding: spacing.sm,
+    cursor: 'pointer',
   },
   cardCover: {
     position: 'relative',
-    aspectRatio: '4/5',
-    borderRadius: borderRadius.lg,
+    aspectRatio: '3/4',
+    borderRadius: borderRadius.md,
     overflow: 'hidden',
-    marginBottom: spacing.md,
+    marginBottom: spacing.xs,
     backgroundColor: colors.bg,
   },
-  coverImage: {
+  cardImg: {
     width: '100%',
     height: '100%',
     objectFit: 'cover',
   },
-  typeBadge: {
-    position: 'absolute',
-    top: spacing.sm,
-    left: spacing.sm,
-  },
   badge: {
+    position: 'absolute',
+    top: 6,
+    left: 6,
+  },
+  badgeIcon: {
     display: 'inline-block',
-    padding: `${spacing.xs}px ${spacing.sm}px`,
-    borderRadius: borderRadius.sm,
-    fontWeight: 700,
-    fontSize: 12,
+    padding: '2px 6px',
+    borderRadius: 4,
+    fontSize: 10,
   },
-  deleteButton: {
+  downloadBtn: {
     position: 'absolute',
-    top: spacing.sm,
-    right: spacing.sm,
-    backgroundColor: 'rgba(0,0,0,0.4)',
-    border: 'none',
-    padding: spacing.sm,
-    borderRadius: borderRadius.sm,
-    cursor: 'pointer',
-    fontSize: 12,
-  },
-  downloadButton: {
-    position: 'absolute',
-    top: '50%',
-    left: '50%',
-    transform: 'translate(-50%, -50%)',
-    backgroundColor: colors.white,
+    bottom: 6,
+    right: 6,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: colors.lime,
     color: colors.black,
     border: 'none',
-    padding: `${spacing.sm}px ${spacing.md}px`,
-    borderRadius: borderRadius.md,
+    fontSize: 16,
     fontWeight: 900,
-    textTransform: 'uppercase',
-    fontSize: 11,
+    cursor: 'pointer',
+  },
+  deleteBtn: {
+    position: 'absolute',
+    top: 6,
+    right: 6,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    color: colors.white,
+    border: 'none',
+    fontSize: 16,
     cursor: 'pointer',
   },
   cardTitle: {
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: 700,
     color: colors.white,
     textTransform: 'uppercase',
-    marginBottom: spacing.xs,
-    marginTop: 0,
+    whiteSpace: 'nowrap',
     overflow: 'hidden',
     textOverflow: 'ellipsis',
-    whiteSpace: 'nowrap',
   },
   cardAuthor: {
-    fontSize: 12,
-    fontWeight: 500,
+    fontSize: 10,
     color: colors.gray,
     textTransform: 'uppercase',
-    marginBottom: spacing.sm,
-    marginTop: 0,
-  },
-  sourceTag: {
-    fontSize: 10,
-    fontWeight: 700,
-    textTransform: 'uppercase',
-    letterSpacing: 2,
-    color: colors.white,
   },
 };

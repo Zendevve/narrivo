@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Book } from '../types';
-import { colors, spacing, borderRadius, typography } from '../theme/neoBrutalism';
+import { colors, spacing, borderRadius } from '../theme/neoBrutalism';
 import { audioService, PlayerState } from '../services/audioService';
 
 interface BottomPlayerProps {
@@ -15,14 +15,11 @@ export const BottomPlayer: React.FC<BottomPlayerProps> = ({ currentBook, onOpenR
     duration: 0,
     playbackRate: 1.0,
   });
-  const [isLoading, setIsLoading] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
 
   useEffect(() => {
     const id = 'bottom-player';
-    audioService.subscribe(id, (state) => {
-      setPlayerState(state);
-      setIsLoading(false);
-    });
+    audioService.subscribe(id, setPlayerState);
     return () => audioService.unsubscribe(id);
   }, []);
 
@@ -46,124 +43,95 @@ export const BottomPlayer: React.FC<BottomPlayerProps> = ({ currentBook, onOpenR
   };
 
   const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const time = Number(e.target.value);
-    audioService.seekTo(time);
+    audioService.seekTo(Number(e.target.value));
   };
 
+  // Compact mobile player
   return (
-    <div style={styles.container}>
-      <div style={styles.player}>
-        {/* Progress bar at top */}
-        <div style={styles.progressTrack}>
-          <div style={{ ...styles.progressFill, width: `${progress}%` }} />
-        </div>
+    <div style={styles.wrapper}>
+      {/* Progress bar at very top */}
+      <div style={styles.progressTrack}>
+        <div style={{ ...styles.progressFill, width: `${progress}%` }} />
+      </div>
 
-        {/* Book Info */}
-        <div style={styles.info}>
+      <div style={styles.player}>
+        {/* Left: Cover + Info */}
+        <div style={styles.left} onClick={() => setIsExpanded(!isExpanded)}>
           {currentBook ? (
             <>
               <div style={styles.cover}>
-                <img src={currentBook.coverUrl} alt={currentBook.title} style={styles.coverImage} />
+                <img src={currentBook.coverUrl} alt="" style={styles.coverImg} />
               </div>
-              <div style={styles.meta}>
-                <span style={styles.nowPlaying}>Now Playing</span>
+              <div style={styles.info}>
                 <div style={styles.title}>{currentBook.title}</div>
                 <div style={styles.author}>{currentBook.author}</div>
               </div>
             </>
           ) : (
-            <div style={styles.emptyInfo}>
-              <span>🎵</span>
+            <div style={styles.empty}>
+              <span style={styles.emptyIcon}>🎵</span>
               <span style={styles.emptyText}>Select a track</span>
             </div>
           )}
         </div>
 
-        {/* Controls */}
+        {/* Right: Controls */}
         <div style={styles.controls}>
-          <button style={styles.skipButton} disabled={!hasAudio}>⏮</button>
           <button
             style={{
-              ...styles.playButton,
-              backgroundColor: hasAudio && !isLoading ? colors.lime : colors.border,
-              color: hasAudio && !isLoading ? colors.black : colors.gray,
+              ...styles.playBtn,
+              backgroundColor: hasAudio ? colors.lime : colors.border,
+              color: hasAudio ? colors.black : colors.gray,
             }}
             onClick={handleTogglePlay}
-            disabled={!hasAudio || isLoading}
+            disabled={!hasAudio}
           >
-            {isLoading ? '...' : playerState.isPlaying ? '⏸' : '▶'}
+            {playerState.isPlaying ? '⏸' : '▶'}
           </button>
-          <button style={styles.skipButton} disabled={!hasAudio}>⏭</button>
+          {currentBook?.ebookPath && (
+            <button style={styles.readerBtn} onClick={onOpenReader}>
+              📖
+            </button>
+          )}
         </div>
+      </div>
 
-        {/* Scrubber & Time */}
-        <div style={styles.scrubber}>
-          <div style={styles.timeDisplay}>
-            <span>{formatTime(playerState.currentTime)}</span>
-            <span>{formatTime(playerState.duration)}</span>
-          </div>
-          <div style={styles.sliderContainer}>
-            <div style={styles.sliderTrack}>
-              <div style={{ ...styles.sliderFill, width: `${progress}%` }} />
-            </div>
+      {/* Expanded view with scrubber */}
+      {isExpanded && hasAudio && (
+        <div style={styles.expanded}>
+          <div style={styles.timeRow}>
+            <span style={styles.time}>{formatTime(playerState.currentTime)}</span>
             <input
               type="range"
               min={0}
               max={playerState.duration || 100}
               value={playerState.currentTime}
               onChange={handleSeek}
-              style={styles.sliderInput}
-              disabled={!hasAudio}
+              style={styles.scrubber}
             />
+            <span style={styles.time}>{formatTime(playerState.duration)}</span>
           </div>
-          <div style={styles.extraControls}>
-            {currentBook?.ebookPath && (
-              <button style={styles.iconButton} onClick={onOpenReader} title="Open Reader">
-                📖
-              </button>
-            )}
+          <div style={styles.speedRow}>
             <span style={styles.speedLabel}>{playerState.playbackRate}x</span>
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 };
 
 const styles: Record<string, React.CSSProperties> = {
-  container: {
+  wrapper: {
     position: 'fixed',
     bottom: 0,
     left: 0,
     right: 0,
-    padding: spacing.md,
-    zIndex: 50,
-    display: 'flex',
-    justifyContent: 'center',
-    pointerEvents: 'none',
-  },
-  player: {
-    width: '100%',
-    maxWidth: 900,
     backgroundColor: colors.card,
-    border: `1px solid ${colors.border}`,
-    borderRadius: borderRadius.xxl,
-    boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
-    pointerEvents: 'auto',
-    display: 'flex',
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: `${spacing.md}px ${spacing.lg}px`,
-    gap: spacing.lg,
-    position: 'relative',
-    overflow: 'hidden',
+    borderTop: `1px solid ${colors.border}`,
+    zIndex: 100,
   },
   progressTrack: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    height: 4,
+    height: 3,
     backgroundColor: colors.border,
   },
   progressFill: {
@@ -171,147 +139,124 @@ const styles: Record<string, React.CSSProperties> = {
     backgroundColor: colors.lime,
     transition: 'width 0.3s ease',
   },
-  info: {
+  player: {
     display: 'flex',
     alignItems: 'center',
-    gap: spacing.md,
+    justifyContent: 'space-between',
+    padding: `${spacing.sm}px ${spacing.md}px`,
+    minHeight: 56,
+  },
+  left: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: spacing.sm,
     flex: 1,
     minWidth: 0,
+    cursor: 'pointer',
   },
   cover: {
-    width: 56,
-    height: 56,
-    borderRadius: borderRadius.md,
+    width: 40,
+    height: 40,
+    borderRadius: borderRadius.sm,
     overflow: 'hidden',
     flexShrink: 0,
-    border: `1px solid ${colors.border}`,
+    backgroundColor: colors.bg,
   },
-  coverImage: {
+  coverImg: {
     width: '100%',
     height: '100%',
     objectFit: 'cover',
   },
-  meta: {
+  info: {
     minWidth: 0,
     flex: 1,
   },
-  nowPlaying: {
-    ...typography.label,
-    color: colors.lime,
-    backgroundColor: colors.border,
-    padding: `2px 6px`,
-    borderRadius: 4,
-    display: 'inline-block',
-    marginBottom: 4,
-  },
   title: {
-    ...typography.body,
+    fontSize: 13,
     fontWeight: 700,
     color: colors.white,
     textTransform: 'uppercase',
+    whiteSpace: 'nowrap',
     overflow: 'hidden',
     textOverflow: 'ellipsis',
-    whiteSpace: 'nowrap',
   },
   author: {
-    ...typography.bodySmall,
+    fontSize: 11,
     color: colors.gray,
     textTransform: 'uppercase',
   },
-  emptyInfo: {
+  empty: {
     display: 'flex',
     alignItems: 'center',
     gap: spacing.sm,
-    color: colors.gray,
+  },
+  emptyIcon: {
+    fontSize: 20,
   },
   emptyText: {
-    ...typography.body,
+    fontSize: 12,
     fontWeight: 700,
+    color: colors.gray,
     textTransform: 'uppercase',
-    letterSpacing: 2,
+    letterSpacing: 1,
   },
   controls: {
     display: 'flex',
     alignItems: 'center',
-    gap: spacing.md,
+    gap: spacing.sm,
   },
-  skipButton: {
-    background: 'none',
-    border: 'none',
-    color: colors.gray,
-    fontSize: 20,
-    cursor: 'pointer',
-    padding: spacing.sm,
-  },
-  playButton: {
-    width: 56,
-    height: 56,
-    borderRadius: borderRadius.lg,
+  playBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: borderRadius.md,
     border: 'none',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: 700,
     cursor: 'pointer',
-    boxShadow: '0 4px 0 rgba(0,0,0,0.3)',
-    transition: 'transform 0.1s',
+  },
+  readerBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: borderRadius.sm,
+    border: `1px solid ${colors.border}`,
+    backgroundColor: 'transparent',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontSize: 16,
+    cursor: 'pointer',
+  },
+  expanded: {
+    padding: `0 ${spacing.md}px ${spacing.sm}px`,
+  },
+  timeRow: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  time: {
+    fontSize: 10,
+    fontFamily: 'monospace',
+    color: colors.gray,
+    minWidth: 32,
   },
   scrubber: {
     flex: 1,
+    height: 4,
+    accentColor: colors.lime,
+  },
+  speedRow: {
     display: 'flex',
-    flexDirection: 'column',
-    gap: spacing.xs,
-    minWidth: 200,
-  },
-  timeDisplay: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    ...typography.label,
-    color: colors.gray,
-    fontFamily: 'monospace',
-  },
-  sliderContainer: {
-    position: 'relative',
-    height: 16,
-    display: 'flex',
-    alignItems: 'center',
-  },
-  sliderTrack: {
-    position: 'absolute',
-    width: '100%',
-    height: 8,
-    backgroundColor: colors.border,
-    borderRadius: 4,
-    overflow: 'hidden',
-  },
-  sliderFill: {
-    height: '100%',
-    backgroundColor: colors.lime,
-  },
-  sliderInput: {
-    position: 'absolute',
-    width: '100%',
-    height: '100%',
-    opacity: 0,
-    cursor: 'pointer',
-  },
-  extraControls: {
-    display: 'flex',
-    alignItems: 'center',
     justifyContent: 'flex-end',
-    gap: spacing.sm,
-  },
-  iconButton: {
-    background: 'none',
-    border: 'none',
-    fontSize: 16,
-    cursor: 'pointer',
-    padding: spacing.xs,
-    color: colors.gray,
+    marginTop: spacing.xs,
   },
   speedLabel: {
-    ...typography.label,
+    fontSize: 10,
+    fontWeight: 700,
     color: colors.periwinkle,
+    textTransform: 'uppercase',
   },
 };
