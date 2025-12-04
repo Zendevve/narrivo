@@ -24,14 +24,16 @@ export const NarrivoApp: React.FC = () => {
 
   return (
     <div style={styles.container}>
-      {activeView === ViewMode.READER && currentBook ? (
-        <ReaderScreen book={currentBook} onClose={handleCloseReader} />
-      ) : (
-        <LibraryScreen
-          onSelectBook={handleSelectBook}
-          onOpenReader={handleOpenReader}
-        />
-      )}
+      <div style={styles.content}>
+        {activeView === ViewMode.READER && currentBook ? (
+          <ReaderScreen book={currentBook} onClose={handleCloseReader} />
+        ) : (
+          <LibraryScreen
+            onSelectBook={handleSelectBook}
+            onOpenReader={handleOpenReader}
+          />
+        )}
+      </div>
 
       <BottomPlayer
         currentBook={currentBook}
@@ -46,9 +48,15 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'flex',
     flexDirection: 'column',
     height: '100vh',
+    width: '100vw',
     backgroundColor: colors.bg,
     fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif',
-    overflow: 'hidden',
+  },
+  content: {
+    flex: 1,
+    overflow: 'auto',
+    display: 'flex',
+    flexDirection: 'column',
   },
 };
 

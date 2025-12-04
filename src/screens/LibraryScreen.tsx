@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useBooksStore } from '../store/booksStore';
 import { Book } from '../types';
-import { colors, typography, spacing, borderRadius } from '../theme/neoBrutalism';
+import { colors, spacing, borderRadius } from '../theme/neoBrutalism';
 import { pickFilesWeb, processImportedFile } from '../services/fileService';
 import { getPublicDomainCatalog, downloadPublicDomainBook } from '../services/downloadService';
 import { audioService } from '../services/audioService';
@@ -18,16 +18,23 @@ export const LibraryScreen: React.FC<LibraryScreenProps> = ({ onSelectBook, onOp
   const [filter, setFilter] = useState<FilterType>('ALL');
   const [downloadingIds, setDownloadingIds] = useState<Set<string>>(new Set());
   const [isImporting, setIsImporting] = useState(false);
+  const [initialized, setInitialized] = useState(false);
 
-  // Initialize public domain catalog on mount
+  // Initialize public domain catalog on mount (once only)
   useEffect(() => {
+    if (initialized) return;
+
     const catalog = getPublicDomainCatalog();
+    const currentBooks = useBooksStore.getState().books;
+
     catalog.forEach((book) => {
-      if (!books.find((b) => b.id === book.id)) {
+      if (!currentBooks.find((b) => b.id === book.id)) {
         addBook(book);
       }
     });
-  }, []);
+
+    setInitialized(true);
+  }, [initialized, addBook]);
 
   const filterBooks = (b: Book) => {
     if (filter === 'ALL') return true;
@@ -50,7 +57,6 @@ export const LibraryScreen: React.FC<LibraryScreenProps> = ({ onSelectBook, onOp
         if (result.isNewBook) {
           addBook(result.book);
         } else if (result.book) {
-          // Merge file into existing book
           const isAudio = file.name.match(/\.(mp3|m4b|m4a|aac|flac|wav|ogg)$/i);
           if (isAudio) {
             mergeBookFiles(result.book.id, file.uri, undefined);
@@ -70,7 +76,7 @@ export const LibraryScreen: React.FC<LibraryScreenProps> = ({ onSelectBook, onOp
 
     setDownloadingIds((prev) => new Set(prev).add(bookId));
     try {
-      const downloadedBook = await downloadPublicDomainBook(book);
+      await downloadPublicDomainBook(book);
       updateBook(bookId, { isDownloaded: true });
     } finally {
       setDownloadingIds((prev) => {
@@ -277,7 +283,7 @@ const BookCard: React.FC<BookCardProps> = ({ book, isDownloading, onSelect, onDo
   );
 };
 
-// Styles
+// Styles - using inline values to avoid typography spread issues
 const styles: Record<string, React.CSSProperties> = {
   container: {
     flex: 1,
@@ -293,7 +299,10 @@ const styles: Record<string, React.CSSProperties> = {
     marginBottom: spacing.lg,
   },
   title: {
-    ...typography.h1,
+    fontSize: 48,
+    fontWeight: 900,
+    textTransform: 'uppercase',
+    letterSpacing: -2,
     color: colors.white,
     margin: 0,
   },
@@ -345,9 +354,12 @@ const styles: Record<string, React.CSSProperties> = {
     marginBottom: spacing.xl,
   },
   emptyTitle: {
-    ...typography.h2,
+    fontSize: 32,
+    fontWeight: 900,
+    textTransform: 'uppercase',
     color: colors.white,
     marginBottom: spacing.sm,
+    marginTop: 0,
   },
   emptyText: {
     color: colors.gray,
@@ -382,7 +394,10 @@ const styles: Record<string, React.CSSProperties> = {
     borderRadius: 4,
   },
   sectionTitle: {
-    ...typography.h3,
+    fontSize: 20,
+    fontWeight: 700,
+    textTransform: 'uppercase',
+    letterSpacing: 1,
     color: colors.white,
     margin: 0,
   },
@@ -450,23 +465,29 @@ const styles: Record<string, React.CSSProperties> = {
     cursor: 'pointer',
   },
   cardTitle: {
-    ...typography.body,
+    fontSize: 14,
     fontWeight: 700,
     color: colors.white,
     textTransform: 'uppercase',
     marginBottom: spacing.xs,
+    marginTop: 0,
     overflow: 'hidden',
     textOverflow: 'ellipsis',
     whiteSpace: 'nowrap',
   },
   cardAuthor: {
-    ...typography.bodySmall,
+    fontSize: 12,
+    fontWeight: 500,
     color: colors.gray,
     textTransform: 'uppercase',
     marginBottom: spacing.sm,
+    marginTop: 0,
   },
   sourceTag: {
-    ...typography.label,
+    fontSize: 10,
+    fontWeight: 700,
+    textTransform: 'uppercase',
+    letterSpacing: 2,
     color: colors.white,
   },
 };
