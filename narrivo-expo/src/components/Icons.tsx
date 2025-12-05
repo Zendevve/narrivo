@@ -77,3 +77,12 @@ export const GridIcon: React.FC<IconProps> = ({ size = 16, color = '#fff' }) => 
     <Rect x="13" y="13" width="8" height="8" />
   </Svg>
 );
+
+export const SyncIcon: React.FC<IconProps> = ({ size = 16, color = '#fff' }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2}>
+    <Path d="M4 12V8C4 6 6 4 8 4H16C18 4 20 6 20 8V12" />
+    <Polyline points="8,8 4,12 0,8" />
+    <Path d="M20 12V16C20 18 18 20 16 20H8C6 20 4 18 4 16V12" />
+    <Polyline points="16,16 20,12 24,16" />
+  </Svg>
+);

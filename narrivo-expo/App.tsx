@@ -4,6 +4,7 @@ import { SafeAreaView, StyleSheet, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { LibraryScreen } from './src/screens/LibraryScreen';
 import { ReaderScreen } from './src/screens/ReaderScreen';
+import { ReadAlongScreen } from './src/screens/ReadAlongScreen';
 import { BottomPlayer } from './src/components/BottomPlayer';
 import { colors } from './src/theme';
 import { Book, ViewMode } from './src/types';
@@ -33,38 +34,67 @@ export default function App() {
     }
   };
 
-  const handleCloseReader = () => {
+  const handleOpenReadAlong = () => {
+    if (currentBook?.audiobookPath && currentBook?.ebookPath) {
+      setActiveView(ViewMode.PLAYER); // Using PLAYER for read-along mode
+    }
+  };
+
+  const handleCloseScreen = () => {
     setActiveView(ViewMode.LIBRARY);
   };
 
-  const handlePlayAudioFromReader = () => {
+  const handlePlayAudioFromReader = async () => {
     if (currentBook?.audiobookPath) {
-      audioService.play();
+      await audioService.play();
     }
+  };
+
+  // Render based on active view
+  const renderContent = () => {
+    if (activeView === ViewMode.READER && currentBook?.ebookPath) {
+      return (
+        <ReaderScreen
+          book={currentBook}
+          onClose={handleCloseScreen}
+          onPlayAudio={currentBook.audiobookPath ? handlePlayAudioFromReader : undefined}
+        />
+      );
+    }
+
+    if (activeView === ViewMode.PLAYER && currentBook) {
+      return (
+        <ReadAlongScreen
+          book={currentBook}
+          onClose={handleCloseScreen}
+        />
+      );
+    }
+
+    // Default: Library view
+    return (
+      <>
+        <View style={styles.content}>
+          <LibraryScreen onSelectBook={handleSelectBook} />
+        </View>
+        <BottomPlayer
+          currentBook={currentBook}
+          onOpenReader={currentBook?.ebookPath ? handleOpenReader : undefined}
+          onOpenReadAlong={
+            currentBook?.audiobookPath && currentBook?.ebookPath
+              ? handleOpenReadAlong
+              : undefined
+          }
+        />
+      </>
+    );
   };
 
   return (
     <GestureHandlerRootView style={styles.root}>
       <SafeAreaView style={styles.container}>
         <StatusBar style="light" />
-
-        {activeView === ViewMode.READER && currentBook?.ebookPath ? (
-          <ReaderScreen
-            book={currentBook}
-            onClose={handleCloseReader}
-            onPlayAudio={currentBook.audiobookPath ? handlePlayAudioFromReader : undefined}
-          />
-        ) : (
-          <>
-            <View style={styles.content}>
-              <LibraryScreen onSelectBook={handleSelectBook} />
-            </View>
-            <BottomPlayer
-              currentBook={currentBook}
-              onOpenReader={currentBook?.ebookPath ? handleOpenReader : undefined}
-            />
-          </>
-        )}
+        {renderContent()}
       </SafeAreaView>
     </GestureHandlerRootView>
   );

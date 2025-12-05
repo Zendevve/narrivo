@@ -10,14 +10,15 @@ import Slider from '@react-native-community/slider';
 import { colors, spacing, borderRadius, typography } from '../theme';
 import { Book } from '../types';
 import { audioService, AudioState } from '../services/audioService';
-import { PlayIcon, PauseIcon, AudioIcon, BookIcon } from './Icons';
+import { PlayIcon, PauseIcon, AudioIcon, BookIcon, SyncIcon } from './Icons';
 
 interface BottomPlayerProps {
   currentBook: Book | null;
   onOpenReader?: () => void;
+  onOpenReadAlong?: () => void;
 }
 
-export const BottomPlayer: React.FC<BottomPlayerProps> = ({ currentBook, onOpenReader }) => {
+export const BottomPlayer: React.FC<BottomPlayerProps> = ({ currentBook, onOpenReader, onOpenReadAlong }) => {
   const [audioState, setAudioState] = useState<AudioState>({
     isPlaying: false,
     isLoading: false,
@@ -94,6 +95,12 @@ export const BottomPlayer: React.FC<BottomPlayerProps> = ({ currentBook, onOpenR
 
         {/* Right: Controls */}
         <View style={styles.controls}>
+          {onOpenReadAlong && (
+            <TouchableOpacity style={styles.syncBtn} onPress={onOpenReadAlong}>
+              <SyncIcon size={16} color={colors.lime} />
+            </TouchableOpacity>
+          )}
+
           <TouchableOpacity
             style={[
               styles.playBtn,
@@ -241,6 +248,15 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.sm,
     borderWidth: 1,
     borderColor: colors.border,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  syncBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: borderRadius.sm,
+    borderWidth: 1,
+    borderColor: colors.lime,
     justifyContent: 'center',
     alignItems: 'center',
   },
