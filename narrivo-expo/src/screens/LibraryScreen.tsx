@@ -14,6 +14,7 @@ import { colors, spacing, borderRadius, typography } from '../theme';
 import { Book } from '../types';
 import { AudioIcon, BookIcon, HybridIcon, DownloadIcon, CloseIcon, PlusIcon, GridIcon } from '../components/Icons';
 import { pickFiles, processImportedFile } from '../services/fileService';
+import { downloadService, DownloadProgress } from '../services/downloadService';
 
 // Public domain sample catalog
 const PUBLIC_CATALOG: Book[] = [
@@ -63,6 +64,7 @@ export const LibraryScreen: React.FC<LibraryScreenProps> = ({ onSelectBook }) =>
   const [filter, setFilter] = useState<FilterType>('ALL');
   const [initialized, setInitialized] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
+  const [downloadProgress, setDownloadProgress] = useState<Map<string, number>>(new Map());
 
   useEffect(() => {
     loadBooks();
@@ -121,8 +123,35 @@ export const LibraryScreen: React.FC<LibraryScreenProps> = ({ onSelectBook }) =>
     }
   };
 
-  const handleDownload = (bookId: string) => {
-    updateBook(bookId, { isDownloaded: true });
+  const handleDownload = async (book: Book) => {
+    // Set up progress tracking
+    const progressCallback = (progress: DownloadProgress) => {
+      setDownloadProgress((prev) => {
+        const next = new Map(prev);
+        if (progress.status === 'downloading') {
+          next.set(book.id, progress.progress);
+        } else {
+          next.delete(book.id);
+        }
+        return next;
+      });
+
+      if (progress.status === 'completed') {
+        downloadService.unsubscribe(`${book.id}-audio`, progressCallback);
+        downloadService.unsubscribe(`${book.id}-ebook`, progressCallback);
+      }
+    };
+
+    downloadService.subscribe(`${book.id}-audio`, progressCallback);
+    downloadService.subscribe(`${book.id}-ebook`, progressCallback);
+
+    try {
+      const updates = await downloadService.downloadPublicDomainBook(book);
+      updateBook(book.id, updates);
+    } catch (e) {
+      console.error('Download error:', e);
+      Alert.alert('Download Failed', 'Could not download the book.');
+    }
   };
 
   const handleDelete = (bookId: string) => {
@@ -181,21 +210,21 @@ export const LibraryScreen: React.FC<LibraryScreenProps> = ({ onSelectBook }) =>
       {/* Imported Books */}
       {importedBooks.length > 0 && (
         <Section title="Imports" color={colors.white}>
-          <BookGrid books={importedBooks} onSelect={onSelectBook} onDownload={handleDownload} onDelete={handleDelete} />
+          <BookGrid books={importedBooks} onSelect={onSelectBook} onDownload={(b) => handleDownload(b)} onDelete={handleDelete} downloadProgress={downloadProgress} />
         </Section>
       )}
 
       {/* Downloaded Books */}
       {downloadedBooks.length > 0 && (
         <Section title="Downloaded" color={colors.lime}>
-          <BookGrid books={downloadedBooks} onSelect={onSelectBook} onDownload={handleDownload} onDelete={handleDelete} />
+          <BookGrid books={downloadedBooks} onSelect={onSelectBook} onDownload={(b) => handleDownload(b)} onDelete={handleDelete} downloadProgress={downloadProgress} />
         </Section>
       )}
 
       {/* Archive */}
       {availableBooks.length > 0 && (
         <Section title="Archive" color={colors.periwinkle}>
-          <BookGrid books={availableBooks} onSelect={onSelectBook} onDownload={handleDownload} onDelete={handleDelete} />
+          <BookGrid books={availableBooks} onSelect={onSelectBook} onDownload={(b) => handleDownload(b)} onDelete={handleDelete} downloadProgress={downloadProgress} />
         </Section>
       )}
     </ScrollView>
@@ -224,12 +253,20 @@ const Section: React.FC<{ title: string; color: string; children: React.ReactNod
 const BookGrid: React.FC<{
   books: Book[];
   onSelect: (book: Book) => void;
-  onDownload: (id: string) => void;
+  onDownload: (book: Book) => void;
   onDelete: (id: string) => void;
-}> = ({ books, onSelect, onDownload, onDelete }) => (
+  downloadProgress: Map<string, number>;
+}> = ({ books, onSelect, onDownload, onDelete, downloadProgress }) => (
   <View style={styles.grid}>
     {books.map((book) => (
-      <BookCard key={book.id} book={book} onPress={() => book.isDownloaded && onSelect(book)} onDownload={() => onDownload(book.id)} onDelete={() => onDelete(book.id)} />
+      <BookCard
+        key={book.id}
+        book={book}
+        onPress={() => book.isDownloaded && onSelect(book)}
+        onDownload={() => onDownload(book)}
+        onDelete={() => onDelete(book.id)}
+        progress={downloadProgress.get(book.id)}
+      />
     ))}
   </View>
 );
@@ -240,26 +277,38 @@ const BookCard: React.FC<{
   onPress: () => void;
   onDownload: () => void;
   onDelete: () => void;
-}> = ({ book, onPress, onDownload, onDelete }) => {
+  progress?: number;
+}> = ({ book, onPress, onDownload, onDelete, progress }) => {
   const TypeIcon = book.type === 'AUDIO' ? AudioIcon : book.type === 'EBOOK' ? BookIcon : HybridIcon;
   const badgeColor = book.type === 'AUDIO' ? colors.lime : book.type === 'EBOOK' ? colors.periwinkle : colors.white;
+  const isDownloading = progress !== undefined && progress < 1;
 
   return (
     <TouchableOpacity style={[styles.card, !book.isDownloaded && styles.cardFaded]} onPress={onPress} activeOpacity={book.isDownloaded ? 0.7 : 1}>
       <View style={styles.cardCover}>
         <Image source={{ uri: book.coverUrl }} style={styles.cardImage} />
+
+        {/* Progress overlay */}
+        {isDownloading && (
+          <View style={styles.progressOverlay}>
+            <View style={[styles.progressBar, { height: `${progress * 100}%` }]} />
+            <Text style={styles.progressText}>{Math.round(progress * 100)}%</Text>
+          </View>
+        )}
+
         <View style={[styles.badge, { backgroundColor: badgeColor }]}>
           <TypeIcon size={10} color={colors.black} />
         </View>
+
         {book.isDownloaded ? (
           <TouchableOpacity style={styles.deleteBtn} onPress={onDelete}>
             <CloseIcon size={12} color={colors.white} />
           </TouchableOpacity>
-        ) : (
+        ) : !isDownloading ? (
           <TouchableOpacity style={styles.downloadBtn} onPress={onDownload}>
             <DownloadIcon size={14} color={colors.black} />
           </TouchableOpacity>
-        )}
+        ) : null}
       </View>
       <Text style={styles.cardTitle} numberOfLines={1}>{book.title}</Text>
       <Text style={styles.cardAuthor} numberOfLines={1}>{book.author}</Text>
@@ -297,4 +346,24 @@ const styles = StyleSheet.create({
   deleteBtn: { position: 'absolute', top: 6, right: 6, width: 24, height: 24, borderRadius: 12, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center' },
   cardTitle: { ...typography.small, color: colors.white, fontWeight: '700', textTransform: 'uppercase' },
   cardAuthor: { ...typography.label, color: colors.gray },
+  progressOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.7)',
+    justifyContent: 'flex-end',
+    alignItems: 'center'
+  },
+  progressBar: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: colors.lime,
+    opacity: 0.3,
+  },
+  progressText: {
+    color: colors.lime,
+    fontSize: 14,
+    fontWeight: '700',
+    marginBottom: spacing.md,
+  },
 });
