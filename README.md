@@ -2,14 +2,15 @@
 
 # 📚 Narrivo
 
-**A modern audiobook + eBook player with intelligent Read-Along sync**
+**The Ultimate Cross-Platform Audiobook & eBook Reader**
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.8-blue)](https://www.typescriptlang.org/)
-[![React Native](https://img.shields.io/badge/React_Native-0.76-61DAFB)](https://reactnative.dev/)
-[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue?logo=typescript)](https://www.typescriptlang.org/)
+[![React](https://img.shields.io/badge/React-19.0-61DAFB?logo=react)](https://react.dev/)
+[![Expo](https://img.shields.io/badge/Expo-50.0-black?logo=expo)](https://expo.dev/)
+[![Vite](https://img.shields.io/badge/Vite-6.0-646CFF?logo=vite)](https://vitejs.dev/)
 
-[Features](#-features) • [Tech Stack](#-tech-stack) • [Architecture](#-architecture) • [Getting Started](#-getting-started) • [Roadmap](#-roadmap)
+[Features](#-features) • [Tech Stack](#-tech-stack) • [Getting Started](#-getting-started) • [Architecture](#-architecture) • [Roadmap](#-roadmap)
 
 </div>
 
@@ -17,229 +18,138 @@
 
 ## 🎯 Overview
 
-Narrivo is an **offline-first Android app** that unifies your audiobook and eBook library with a unique **Read-Along** feature. Import your own files or explore curated public-domain classics—then experience synchronized text highlighting as you listen.
+**Narrivo** is a next-generation reading experience that unifies your audiobooks and eBooks. Whether you're on the web or on the go with your mobile device, Narrivo provides a seamless, synced **Read-Along** experience.
 
-**Key Differentiators**:
-- 🎵📖 **Intelligent file matching** — Import an audiobook and eBook separately; Narrivo auto-merges them for Read-Along
-- 🎨 **Neo-Brutalism UI** — Bold, high-contrast design with vivid pastel accents (lime, periwinkle, pink)
-- 📱 **Android-native** — Built with Scoped Storage (SAF), background audio, and lock-screen controls
-- 🔒 **Privacy-first** — All files stored locally; no cloud sync, no tracking
+Designed with a bold **Neo-Brutalism** aesthetic, Narrivo isn't just a tool—it's a statement.
+
+### Why Narrivo?
+- **🎵📖 Read-Along Sync**: Import an audiobook and its matching eBook, and Narrivo intelligently syncs them. Listen while the text highlights in real-time.
+- **📱💻 Cross-Platform**:
+  - **Web**: Blazing fast, built with React + Vite.
+  - **Mobile**: Native performance on Android/iOS via Expo.
+- **🎨 Neo-Brutalism Design**: High contrast, vibrant colors, and sharp edges for a modern, tactile feel.
+- **🔒 Privacy First**: Your library lives on your device. Zero tracking, zero cloud dependency.
 
 ---
 
 ## ✨ Features
 
-### 📚 Library Management
-- **Import your files** via Android file picker (MP3, M4B, EPUB, PDF)
-- **Public-domain library** with one-tap downloads (Project Gutenberg, LibriVox)
-- **Smart organization** by format (Audio/eBook/Hybrid) with visual badges
-- **Fuzzy file matching** — Automatically links `gatsby.mp3` + `gatsby.epub` → Read-Along
+### 🎧 Unified Player
+- Supports **EPUB**, **PDF**, **MP3**, and **M4B**.
+- Intelligent **Fuzzy Matching**: Automatically links `book.mp3` with `book.epub` specifically for Read-Along mode.
+- Variable playback speed (0.5x – 3.0x), sleep timer, and bookmarks.
 
-### 🎧 Audio Playback
-- Background playback with Android foreground service
-- Lock-screen controls + notification media controls
-- Variable playback speed (0.5x – 2.5x)
-- Sleep timer with auto-fade
-- Bookmarks with timestamps
+### 📱 Mobile Experience (Expo)
+- **Offline-First**: Download books once, read anywhere.
+- **Background Audio**: Keep listening while using other apps or with the screen off.
+- **Native Filesystem**: Securely access your local documents.
 
-### 📖 eBook Reader
-- EPUB and PDF rendering
-- Adjustable font size and theme
-- Text search and annotations
-- Scroll position persistence
-
-### 🎵📖 Read-Along Mode *(Flagship Feature)*
-- **Real-time text highlighting** synced with audio playback
-- **Tap-to-jump** — Touch highlighted text to seek audio
-- Manual sync adjustment for timing drift
-- Works with user-imported or public-domain content
+### 💻 Web Experience (React + Vite)
+- **Instant Load**: Optimized for desktop reading.
+- **Drag & Drop**: Easily manage your library with a simple drag-and-drop interface.
+- **Responsive Layout**: Adjusts perfectly to any screen size.
 
 ---
 
 ## 🛠 Tech Stack
 
-### Core
-- **React Native** — Cross-platform framework (Android-focused MVP)
-- **TypeScript** — End-to-end type safety
-- **Zustand** — Lightweight state management
+Narrivo utilizes a modern monorepo-style structure to share logic and design principles across platforms.
 
-### Android-Specific
-- **Scoped Storage (SAF)** — Modern file access without legacy permissions
-- **react-native-track-player** — Background audio + notification controls
-- **react-native-pdf** — Native PDF rendering
-- **epubjs** — EPUB parsing and rendering
-
-### Design
-- **Custom Neo-Brutalism theme** — Hand-crafted design system (no UI library)
-- **Monorepo architecture** — Shared utilities, isolated components
-
----
-
-## 🏗 Architecture
-
-```
-/narrivo
-├── /src
-│   ├── /types          # TypeScript interfaces (Book, PlayerState, etc.)
-│   ├── /theme          # Neo-Brutalism design tokens
-│   ├── /store          # Zustand state management
-│   ├── /utils          # File matching, metadata extraction
-│   ├── /services       # Audio, file picker, downloads, storage
-│   ├── /screens        # Library, Reader, Read-Along, Settings
-│   └── /components     # Reusable UI components
-├── /android            # Native Android configuration
-└── PROGRESS.md         # Development tracker
-```
-
-### State Management Flow
-
-```mermaid
-graph LR
-    A[File Import] --> B[Metadata Extraction]
-    B --> C{Matching Book?}
-    C -->|Yes| D[Merge Files]
-    C -->|No| E[Create New Book]
-    D --> F[Update Store]
-    E --> F
-    F --> G[UI Re-render]
-```
-
-### File Matching Algorithm
-
-1. **Exact Match** — Normalize title + author, compare
-2. **Fuzzy Match** — Jaccard similarity on character sets (threshold: 0.7)
-3. **User Confirmation** — Prompt if confidence < 0.9
+| Category | Technology | Usage |
+|----------|------------|-------|
+| **Core** | **TypeScript** | End-to-end type safety |
+| **State** | **Zustand** | Lightweight, predictable state management |
+| **Web** | **React 19**, **Vite** | High-performance browser application |
+| **Mobile** | **Expo**, **React Native** | Native Android application framework |
+| **Parsing** | **epubjs**, **react-native-pdf** | Robust document rendering |
+| **Design** | **CSS Modules** / **Native Styles** | Custom Neo-Brutalism design system |
 
 ---
 
 ## 🚀 Getting Started
 
 ### Prerequisites
-- **Node.js** 18+ and npm
-- **Android Studio** with SDK 24+ (Android 7.0)
-- **React Native CLI** (`npm install -g react-native-cli`)
+- **Node.js** 18+
+- **npm** or **yarn**
+- **Git**
 
-### Installation
-
+### 1️⃣ Clone the Repository
 ```bash
-# Clone the repository
 git clone https://github.com/Zendevve/narrivo.git
 cd narrivo
+```
+
+### 2️⃣ Run the Web Application
+The web app is located in the root directory.
+
+```bash
+# Install dependencies
+npm install
+
+# Start the development server
+npm run dev
+```
+Visit `http://localhost:5173` to view the app.
+
+### 3️⃣ Run the Mobile Application
+The mobile app is located in the `narrivo-expo` directory.
+
+```bash
+# Navigate to mobile directory
+cd narrivo-expo
 
 # Install dependencies
 npm install
 
-# Install Android dependencies
-cd android && ./gradlew clean && cd ..
-
-# Start Metro bundler
-npm start
-
-# Run on Android device/emulator (new terminal)
-npm run android
+# Start Expo
+npx expo start
 ```
-
-### Development Commands
-
-```bash
-npm run dev          # Start Metro bundler
-npm run android      # Build and run Android app
-npm run lint         # Run ESLint
-npm run test         # Run Jest tests
-npm run build        # Production build
-```
+- Press `a` to run on **Android Emulator**.
+- Scan the QR code with **Expo Go** on your physical device.
 
 ---
 
-## 📊 Project Status
+## 🏗 Architecture
 
-**Phase**: Core Architecture Complete (25%)
-
-- ✅ Type system with Android-ready Book model
-- ✅ Neo-Brutalism design system
-- ✅ Zustand store with file merging logic
-- ✅ Intelligent metadata extraction + matching
-- 🚧 Services layer (audio, file picker, downloads)
-- 🚧 UI components migration
-- 🚧 Read-Along sync implementation
-
-See [PROGRESS.md](PROGRESS.md) for detailed tracker.
+```text
+/narrivo
+├── /src              # Web Application Source
+│   ├── /components   # React Web Components
+│   ├── /store        # Shared Zustand Store (Web)
+│   └── main.tsx      # Web Entry Point
+├── /narrivo-expo     # Mobile Application Source
+│   ├── /App.tsx      # Mobile Entry Point
+│   └── /components   # React Native Components
+├── /docs             # Documentation & Specs
+└── README.md         # You are here
+```
 
 ---
 
 ## 🗺 Roadmap
 
-### v0.1.0 — MVP (Target: Q1 2025)
-- [ ] File import with SAF
-- [ ] Audio playback with background support
-- [ ] EPUB/PDF reader
-- [ ] Basic Read-Along sync
-- [ ] Public-domain starter library
-
-### v0.2.0 — Enhanced UX
-- [ ] Advanced sync calibration
-- [ ] Cloud backup (optional, encrypted)
-- [ ] Collections and playlists
-- [ ] Metadata editing
-
-### v1.0.0 — Public Release
-- [ ] iOS version
-- [ ] Accessibility improvements (screen readers, high contrast)
-- [ ] Multi-language support
-- [ ] Performance optimizations
-
----
-
-## 🎨 Design Philosophy
-
-Narrivo's **Neo-Brutalism aesthetic** is inspired by modern fintech SaaS apps—bold, unapologetic, and highly functional.
-
-**Design Principles**:
-- **High contrast** — Deep charcoal (#121214) + vivid accents (#CCFF00, #9999FF)
-- **Hard shadows** — 4px solid black shadows (no blur)
-- **All-caps typography** — Headlines use Inter Black with tight tracking
-- **Rounded cards** — 24-32px border radius for tactile friendliness
-- **Modular components** — Every element is a reusable design token
+- [x] **Core Architecture**: Web and Mobile environments set up.
+- [x] **Design System**: Neo-Brutalism theme implementation.
+- [ ] **Read-Along Engine**:
+    - [ ] Text-Audio alignment algorithm.
+    - [ ] Sync calibration UI.
+- [ ] **Library Management**:
+    - [ ] Metadata editing.
+    - [ ] Collections/Tags.
+- [ ] **Cross-Platform Sync**: (Future) Optional cloud save for reading progress.
 
 ---
 
 ## 🤝 Contributing
 
-Contributions are welcome! Please read [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+We welcome contributions! Whether it's fixing bugs, improving documentation, or proposing new features, your help is appreciated.
 
-**Good First Issues**:
-- Add support for `.m4b` audiobooks
-- Implement dark/light theme toggle
-- Create unit tests for matching algorithm
-- Design app icon and splash screen
-
----
-
-## 📄 License
-
-This project is licensed under the **MIT License** — see [LICENSE](LICENSE) for details.
-
----
-
-## 🙏 Acknowledgments
-
-- **LibriVox** — Public-domain audiobooks
-- **Project Gutenberg** — Public-domain eBooks
-- **React Native Community** — Open-source libraries and support
-
----
-
-## 📬 Contact
-
-**Author**: [Zendevve](https://github.com/Zendevve)
-**Project Link**: [https://github.com/Zendevve/narrivo](https://github.com/Zendevve/narrivo)
+Please read [CONTRIBUTING.md](CONTRIBUTING.md) for details on our code of conduct and the process for submitting pull requests.
 
 ---
 
 <div align="center">
 
-**⭐ Star this repo if you find it interesting!**
-
-Made with ❤️ for audiobook and eBook enthusiasts
+**Made with ❤️ by the Narrivo Team**
 
 </div>
