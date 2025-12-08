@@ -6,40 +6,23 @@ import {
   TouchableOpacity,
   StyleSheet,
   SafeAreaView,
-  Dimensions,
+  ActivityIndicator,
 } from 'react-native';
 import { useRoute, useNavigation, RouteProp } from '@react-navigation/native';
 import { colors, spacing, borderRadius, typography } from '../theme';
 import { Book } from '../types';
 import { audioService, AudioState } from '../services/audioService';
-import { CloseIcon, PlayIcon, PauseIcon } from '../components/Icons';
+import { epubService, Chapter, EpubContent } from '../services/epubService';
+import { CloseIcon, PlayIcon, PauseIcon, SkipBackIcon, SkipForwardIcon } from '../components/Icons';
 import { LibraryStackParamList } from '../navigation/RootNavigator';
 
 type ReadAlongScreenRouteProp = RouteProp<LibraryStackParamList, 'ReadAlong'>;
-
-// Sample text for demo - in production, extract from EPUB
-const SAMPLE_CHAPTERS = [
-  {
-    title: 'Chapter 1',
-    paragraphs: [
-      'It is a truth universally acknowledged, that a single man in possession of a good fortune, must be in want of a wife.',
-      'However little known the feelings or views of such a man may be on his first entering a neighbourhood, this truth is so well fixed in the minds of the surrounding families, that he is considered as the rightful property of some one or other of their daughters.',
-      '"My dear Mr. Bennet," said his lady to him one day, "have you heard that Netherfield Park is let at last?"',
-      'Mr. Bennet replied that he had not.',
-      '"But it is," returned she; "for Mrs. Long has just been here, and she told me all about it."',
-      'Mr. Bennet made no answer.',
-      '"Do not you want to know who has taken it?" cried his wife impatiently.',
-      '"You want to tell me, and I have no objection to hearing it."',
-      'This was invitation enough.',
-      '"Why, my dear, you must know, Mrs. Long says that Netherfield is taken by a young man of large fortune from the north of England."',
-    ],
-  },
-];
 
 export const ReadAlongScreen: React.FC = () => {
   const route = useRoute<ReadAlongScreenRouteProp>();
   const navigation = useNavigation();
   const { book } = route.params;
+
   const [audioState, setAudioState] = useState<AudioState>({
     isPlaying: false,
     isLoading: false,
@@ -48,28 +31,46 @@ export const ReadAlongScreen: React.FC = () => {
     playbackRate: 1.0,
     error: null,
   });
+  const [epubContent, setEpubContent] = useState<EpubContent | null>(null);
+  const [currentChapterIndex, setCurrentChapterIndex] = useState(0);
   const [currentParagraph, setCurrentParagraph] = useState(0);
+  const [isLoadingContent, setIsLoadingContent] = useState(true);
+
   const scrollViewRef = useRef<ScrollView>(null);
-  const paragraphRefs = useRef<(View | null)[]>([]);
   const [paragraphLayouts, setParagraphLayouts] = useState<{ y: number; height: number }[]>([]);
 
+  // Load EPUB content
+  useEffect(() => {
+    const loadContent = async () => {
+      setIsLoadingContent(true);
+      const content = await epubService.extractContent(book);
+      setEpubContent(content);
+      setIsLoadingContent(false);
+    };
+    loadContent();
+  }, [book]);
+
+  // Subscribe to audio state
   useEffect(() => {
     audioService.subscribe('read-along', setAudioState);
     return () => audioService.unsubscribe('read-along');
   }, []);
 
+  // Get current chapter
+  const currentChapter: Chapter | null = epubContent?.chapters[currentChapterIndex] ?? null;
+  const totalParagraphs = currentChapter?.paragraphs.length ?? 0;
+
   // Calculate current paragraph based on audio progress
   useEffect(() => {
-    if (audioState.duration <= 0) return;
+    if (audioState.duration <= 0 || !currentChapter) return;
 
     const progress = audioState.currentTime / audioState.duration;
-    const totalParagraphs = SAMPLE_CHAPTERS[0].paragraphs.length;
     const newParagraph = Math.min(
       Math.floor(progress * totalParagraphs),
       totalParagraphs - 1
     );
 
-    if (newParagraph !== currentParagraph) {
+    if (newParagraph !== currentParagraph && newParagraph >= 0) {
       setCurrentParagraph(newParagraph);
 
       // Auto-scroll to current paragraph
@@ -80,7 +81,7 @@ export const ReadAlongScreen: React.FC = () => {
         });
       }
     }
-  }, [audioState.currentTime, audioState.duration, currentParagraph, paragraphLayouts]);
+  }, [audioState.currentTime, audioState.duration, currentParagraph, paragraphLayouts, currentChapter, totalParagraphs]);
 
   const handlePlayPause = async () => {
     if (audioState.isPlaying) {
@@ -94,10 +95,25 @@ export const ReadAlongScreen: React.FC = () => {
     if (audioState.duration <= 0) return;
 
     // Jump to approximate audio position
-    const totalParagraphs = SAMPLE_CHAPTERS[0].paragraphs.length;
     const newTime = (index / totalParagraphs) * audioState.duration;
     audioService.seekTo(newTime);
     setCurrentParagraph(index);
+  };
+
+  const handlePrevChapter = () => {
+    if (currentChapterIndex > 0) {
+      setCurrentChapterIndex(currentChapterIndex - 1);
+      setCurrentParagraph(0);
+      setParagraphLayouts([]);
+    }
+  };
+
+  const handleNextChapter = () => {
+    if (epubContent && currentChapterIndex < epubContent.chapters.length - 1) {
+      setCurrentChapterIndex(currentChapterIndex + 1);
+      setCurrentParagraph(0);
+      setParagraphLayouts([]);
+    }
   };
 
   const formatTime = (seconds: number): string => {
@@ -108,6 +124,17 @@ export const ReadAlongScreen: React.FC = () => {
   };
 
   const progress = audioState.duration > 0 ? audioState.currentTime / audioState.duration : 0;
+
+  if (isLoadingContent) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={colors.lime} />
+          <Text style={styles.loadingText}>Loading content...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -134,15 +161,38 @@ export const ReadAlongScreen: React.FC = () => {
         </View>
       </View>
 
+      {/* Chapter navigation */}
+      {epubContent && epubContent.chapters.length > 1 && (
+        <View style={styles.chapterNav}>
+          <TouchableOpacity
+            style={[styles.chapterBtn, currentChapterIndex === 0 && styles.chapterBtnDisabled]}
+            onPress={handlePrevChapter}
+            disabled={currentChapterIndex === 0}
+          >
+            <SkipBackIcon size={14} color={currentChapterIndex === 0 ? colors.gray : colors.white} />
+          </TouchableOpacity>
+          <Text style={styles.chapterIndicator}>
+            Chapter {currentChapterIndex + 1} of {epubContent.chapters.length}
+          </Text>
+          <TouchableOpacity
+            style={[styles.chapterBtn, currentChapterIndex >= epubContent.chapters.length - 1 && styles.chapterBtnDisabled]}
+            onPress={handleNextChapter}
+            disabled={currentChapterIndex >= epubContent.chapters.length - 1}
+          >
+            <SkipForwardIcon size={14} color={currentChapterIndex >= epubContent.chapters.length - 1 ? colors.gray : colors.white} />
+          </TouchableOpacity>
+        </View>
+      )}
+
       {/* Text content */}
       <ScrollView
         ref={scrollViewRef}
         style={styles.content}
         contentContainerStyle={styles.contentInner}
       >
-        <Text style={styles.chapterTitle}>{SAMPLE_CHAPTERS[0].title}</Text>
+        <Text style={styles.chapterTitle}>{currentChapter?.title ?? 'Chapter'}</Text>
 
-        {SAMPLE_CHAPTERS[0].paragraphs.map((para, index) => (
+        {currentChapter?.paragraphs.map((para, index) => (
           <TouchableOpacity
             key={index}
             onPress={() => handleParagraphTap(index)}
@@ -199,6 +249,16 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.bg,
   },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    ...typography.body,
+    color: colors.gray,
+    marginTop: spacing.md,
+  },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -249,6 +309,30 @@ const styles = StyleSheet.create({
   timeText: {
     fontSize: 10,
     fontFamily: 'monospace',
+    color: colors.gray,
+  },
+  chapterNav: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: spacing.md,
+    paddingVertical: spacing.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  chapterBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: borderRadius.sm,
+    backgroundColor: colors.card,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  chapterBtnDisabled: {
+    opacity: 0.5,
+  },
+  chapterIndicator: {
+    ...typography.label,
     color: colors.gray,
   },
   content: {
