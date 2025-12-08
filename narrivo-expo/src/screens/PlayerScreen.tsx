@@ -228,11 +228,11 @@ export const PlayerScreen: React.FC = () => {
       <View style={styles.actionsRow}>
         {/* Sleep Timer */}
         <TouchableOpacity
-          style={[styles.actionBtn, sleepTimer && styles.actionBtnActive]}
+          style={[styles.actionBtn, sleepTimer ? styles.actionBtnActive : null]}
           onPress={() => sleepTimer ? cancelSleepTimer() : setSleepModalVisible(true)}
         >
           <Text style={styles.actionIcon}>🌙</Text>
-          <Text style={[styles.actionText, sleepTimer && styles.actionTextActive]}>
+          <Text style={[styles.actionText, sleepTimer ? styles.actionTextActive : null]}>
             {sleepRemaining ? formatSleepRemaining(sleepRemaining) : 'Sleep'}
           </Text>
         </TouchableOpacity>

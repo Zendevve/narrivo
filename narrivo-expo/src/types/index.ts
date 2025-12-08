@@ -8,10 +8,12 @@ export type BookSource = 'USER' | 'PUBLIC';
 
 export interface Bookmark {
   id: string;
-  type: 'audio' | 'text';
+  type?: 'audio' | 'text';
   position: number; // seconds for audio, character/page for text
   note?: string;
-  timestamp: number;
+  label?: string;
+  timestamp?: number;
+  createdAt?: string;
 }
 
 export interface Book {

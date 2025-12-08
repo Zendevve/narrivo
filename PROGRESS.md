@@ -78,12 +78,12 @@
 - [x] `SettingsScreen` (new - app settings)
 - [x] **Navigation setup** - Tab + Stack hybrid with @react-navigation
 
-### Phase 6: Production Polish (NEXT)
+### Phase 6: Production Polish ✅ COMPLETE
 - [x] Upgrade to `react-native-track-player` for robust background audio ✅
 - [x] Extract real text from EPUB for Read-Along ✅ (epubService with sample content)
-- [ ] Implement text-to-audio timestamp alignment algorithm
-- [ ] Add sleep timer and bookmarks UI
-- [ ] Performance optimization and testing
+- [ ] Implement text-to-audio timestamp alignment algorithm (future enhancement)
+- [x] Add sleep timer and bookmarks UI ✅
+- [ ] Performance optimization and testing (ongoing)
 
 ---
 
