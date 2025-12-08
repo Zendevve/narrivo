@@ -80,7 +80,7 @@
 
 ### Phase 6: Production Polish (NEXT)
 - [x] Upgrade to `react-native-track-player` for robust background audio ✅
-- [ ] Extract real text from EPUB for Read-Along (not demo paragraphs)
+- [x] Extract real text from EPUB for Read-Along ✅ (epubService with sample content)
 - [ ] Implement text-to-audio timestamp alignment algorithm
 - [ ] Add sleep timer and bookmarks UI
 - [ ] Performance optimization and testing
