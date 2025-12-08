@@ -63,17 +63,27 @@
 
 ## Next Steps
 
-### Phase 4: Services Layer
-- [ ] `audioService.ts` - Background audio playback
-- [ ] `fileService.ts` - Android SAF file picker
-- [ ] `downloadService.ts` - Public domain downloads
-- [ ] `storageService.ts` - AsyncStorage persistence
+### Phase 4: Services Layer ✅ COMPLETE
+- [x] `audioService.ts` - expo-av based playback with background support
+- [x] `fileService.ts` - expo-document-picker for Android file picking
+- [x] `downloadService.ts` - Public domain downloads with progress tracking
+- [x] `storageService.ts` → `booksStore.ts` - Zustand + AsyncStorage persistence
 
-### Phase 5: UI Components
-- [ ] Migrate `LibraryScreen` with Neo-Brutalism styling
-- [ ] Migrate `ReaderScreen` with EPUB/PDF support
-- [ ] Create `ReadAlongScreen` with sync highlighting
-- [ ] Migrate `BottomPlayer` with native audio
+### Phase 5: UI Components ✅ MOSTLY COMPLETE
+- [x] `LibraryScreen` with Neo-Brutalism styling (React Native)
+- [x] `ReaderScreen` with EPUB support (@epubjs-react-native/core)
+- [x] `ReadAlongScreen` with sync highlighting (demo paragraphs)
+- [x] `BottomPlayer` with expandable controls
+- [x] `PlayerScreen` (new - full-screen audio controls)
+- [x] `SettingsScreen` (new - app settings)
+- [x] **Navigation setup** - Tab + Stack hybrid with @react-navigation
+
+### Phase 6: Production Polish (NEXT)
+- [ ] Upgrade to `react-native-track-player` for robust background audio
+- [ ] Extract real text from EPUB for Read-Along (not demo paragraphs)
+- [ ] Implement text-to-audio timestamp alignment algorithm
+- [ ] Add sleep timer and bookmarks UI
+- [ ] Performance optimization and testing
 
 ---
 

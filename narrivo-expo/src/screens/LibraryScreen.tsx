@@ -9,12 +9,16 @@ import {
   ActivityIndicator,
   Alert,
 } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import { StackNavigationProp } from '@react-navigation/stack';
 import { useBooksStore } from '../store/booksStore';
 import { colors, spacing, borderRadius, typography } from '../theme';
 import { Book } from '../types';
 import { AudioIcon, BookIcon, HybridIcon, DownloadIcon, CloseIcon, PlusIcon, GridIcon } from '../components/Icons';
 import { pickFiles, processImportedFile } from '../services/fileService';
 import { downloadService, DownloadProgress } from '../services/downloadService';
+import { audioService } from '../services/audioService';
+import { LibraryStackParamList } from '../navigation/RootNavigator';
 
 // Public domain sample catalog
 const PUBLIC_CATALOG: Book[] = [
@@ -54,12 +58,10 @@ const PUBLIC_CATALOG: Book[] = [
 ];
 
 type FilterType = 'ALL' | 'AUDIO' | 'EBOOK';
+type LibraryScreenNavigationProp = StackNavigationProp<LibraryStackParamList, 'LibraryHome'>;
 
-interface LibraryScreenProps {
-  onSelectBook: (book: Book) => void;
-}
-
-export const LibraryScreen: React.FC<LibraryScreenProps> = ({ onSelectBook }) => {
+export const LibraryScreen: React.FC = () => {
+  const navigation = useNavigation<LibraryScreenNavigationProp>();
   const { books, addBook, updateBook, deleteBook, loadBooks, isLoading } = useBooksStore();
   const [filter, setFilter] = useState<FilterType>('ALL');
   const [initialized, setInitialized] = useState(false);
@@ -161,6 +163,25 @@ export const LibraryScreen: React.FC<LibraryScreenProps> = ({ onSelectBook }) =>
     ]);
   };
 
+  const handleSelectBook = async (book: Book) => {
+    if (!book.isDownloaded) return;
+
+    // Load audio if available
+    if (book.audiobookPath) {
+      await audioService.loadTrack(book);
+    }
+
+    // Navigate based on book type
+    if (book.type === 'HYBRID') {
+      // HYBRID books go to Read-Along
+      navigation.navigate('ReadAlong', { book });
+    } else if (book.type === 'EBOOK') {
+      // Pure ebooks go to Reader
+      navigation.navigate('Reader', { book });
+    }
+    // Pure audio books will play via the Player tab (no navigation needed here)
+  };
+
   if (isLoading) {
     return (
       <View style={styles.loadingContainer}>
@@ -210,21 +231,21 @@ export const LibraryScreen: React.FC<LibraryScreenProps> = ({ onSelectBook }) =>
       {/* Imported Books */}
       {importedBooks.length > 0 && (
         <Section title="Imports" color={colors.white}>
-          <BookGrid books={importedBooks} onSelect={onSelectBook} onDownload={(b) => handleDownload(b)} onDelete={handleDelete} downloadProgress={downloadProgress} />
+          <BookGrid books={importedBooks} onSelect={handleSelectBook} onDownload={(b) => handleDownload(b)} onDelete={handleDelete} downloadProgress={downloadProgress} />
         </Section>
       )}
 
       {/* Downloaded Books */}
       {downloadedBooks.length > 0 && (
         <Section title="Downloaded" color={colors.lime}>
-          <BookGrid books={downloadedBooks} onSelect={onSelectBook} onDownload={(b) => handleDownload(b)} onDelete={handleDelete} downloadProgress={downloadProgress} />
+          <BookGrid books={downloadedBooks} onSelect={handleSelectBook} onDownload={(b) => handleDownload(b)} onDelete={handleDelete} downloadProgress={downloadProgress} />
         </Section>
       )}
 
       {/* Archive */}
       {availableBooks.length > 0 && (
         <Section title="Archive" color={colors.periwinkle}>
-          <BookGrid books={availableBooks} onSelect={onSelectBook} onDownload={(b) => handleDownload(b)} onDelete={handleDelete} downloadProgress={downloadProgress} />
+          <BookGrid books={availableBooks} onSelect={handleSelectBook} onDownload={(b) => handleDownload(b)} onDelete={handleDelete} downloadProgress={downloadProgress} />
         </Section>
       )}
     </ScrollView>

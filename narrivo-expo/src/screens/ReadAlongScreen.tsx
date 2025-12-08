@@ -8,15 +8,14 @@ import {
   SafeAreaView,
   Dimensions,
 } from 'react-native';
+import { useRoute, useNavigation, RouteProp } from '@react-navigation/native';
 import { colors, spacing, borderRadius, typography } from '../theme';
 import { Book } from '../types';
 import { audioService, AudioState } from '../services/audioService';
 import { CloseIcon, PlayIcon, PauseIcon } from '../components/Icons';
+import { LibraryStackParamList } from '../navigation/RootNavigator';
 
-interface ReadAlongScreenProps {
-  book: Book;
-  onClose: () => void;
-}
+type ReadAlongScreenRouteProp = RouteProp<LibraryStackParamList, 'ReadAlong'>;
 
 // Sample text for demo - in production, extract from EPUB
 const SAMPLE_CHAPTERS = [
@@ -37,7 +36,10 @@ const SAMPLE_CHAPTERS = [
   },
 ];
 
-export const ReadAlongScreen: React.FC<ReadAlongScreenProps> = ({ book, onClose }) => {
+export const ReadAlongScreen: React.FC = () => {
+  const route = useRoute<ReadAlongScreenRouteProp>();
+  const navigation = useNavigation();
+  const { book } = route.params;
   const [audioState, setAudioState] = useState<AudioState>({
     isPlaying: false,
     isLoading: false,
@@ -111,7 +113,7 @@ export const ReadAlongScreen: React.FC<ReadAlongScreenProps> = ({ book, onClose 
     <SafeAreaView style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity style={styles.closeBtn} onPress={onClose}>
+        <TouchableOpacity style={styles.closeBtn} onPress={() => navigation.goBack()}>
           <CloseIcon size={20} color={colors.white} />
         </TouchableOpacity>
         <View style={styles.titleArea}>

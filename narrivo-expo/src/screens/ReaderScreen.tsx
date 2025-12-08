@@ -7,27 +7,35 @@ import {
   SafeAreaView,
   ActivityIndicator,
 } from 'react-native';
+import { useRoute, useNavigation, RouteProp } from '@react-navigation/native';
 import { Reader, ReaderProvider, useReader } from '@epubjs-react-native/core';
 import { useFileSystem } from '@epubjs-react-native/expo-file-system';
 import { colors, spacing, borderRadius, typography } from '../theme';
 import { Book } from '../types';
 import { CloseIcon, AudioIcon } from '../components/Icons';
+import { LibraryStackParamList } from '../navigation/RootNavigator';
+import { audioService } from '../services/audioService';
 
-interface ReaderScreenProps {
-  book: Book;
-  onClose: () => void;
-  onPlayAudio?: () => void;
-}
+type ReaderScreenRouteProp = RouteProp<LibraryStackParamList, 'Reader'>;
 
-export const ReaderScreen: React.FC<ReaderScreenProps> = ({ book, onClose, onPlayAudio }) => {
+export const ReaderScreen: React.FC = () => {
+  const route = useRoute<ReaderScreenRouteProp>();
+  const navigation = useNavigation();
+  const { book } = route.params;
+
   return (
     <ReaderProvider>
-      <ReaderContent book={book} onClose={onClose} onPlayAudio={onPlayAudio} />
+      <ReaderContent book={book} onClose={() => navigation.goBack()} />
     </ReaderProvider>
   );
 };
 
-const ReaderContent: React.FC<ReaderScreenProps> = ({ book, onClose, onPlayAudio }) => {
+interface ReaderContentProps {
+  book: Book;
+  onClose: () => void;
+}
+
+const ReaderContent: React.FC<ReaderContentProps> = ({ book, onClose }) => {
   const { goNext, goPrevious, getCurrentLocation, getLocations } = useReader();
   const [isLoading, setIsLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
@@ -83,8 +91,8 @@ const ReaderContent: React.FC<ReaderScreenProps> = ({ book, onClose, onPlayAudio
             <Text style={styles.author} numberOfLines={1}>{book.author}</Text>
           </View>
 
-          {hasAudio && onPlayAudio && (
-            <TouchableOpacity style={styles.audioBtn} onPress={onPlayAudio}>
+          {hasAudio && (
+            <TouchableOpacity style={styles.audioBtn} onPress={() => audioService.play()}>
               <AudioIcon size={16} color={colors.black} />
             </TouchableOpacity>
           )}
@@ -131,7 +139,7 @@ const ReaderContent: React.FC<ReaderScreenProps> = ({ book, onClose, onPlayAudio
         <View style={styles.bottomBar}>
           {/* Navigation */}
           <View style={styles.navRow}>
-            <TouchableOpacity style={styles.navBtn} onPress={goPrevious}>
+            <TouchableOpacity style={styles.navBtn} onPress={() => goPrevious()}>
               <Text style={styles.navBtnText}>Prev</Text>
             </TouchableOpacity>
 
@@ -141,7 +149,7 @@ const ReaderContent: React.FC<ReaderScreenProps> = ({ book, onClose, onPlayAudio
               </Text>
             </View>
 
-            <TouchableOpacity style={styles.navBtn} onPress={goNext}>
+            <TouchableOpacity style={styles.navBtn} onPress={() => goNext()}>
               <Text style={styles.navBtnText}>Next</Text>
             </TouchableOpacity>
           </View>
