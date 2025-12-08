@@ -79,7 +79,7 @@
 - [x] **Navigation setup** - Tab + Stack hybrid with @react-navigation
 
 ### Phase 6: Production Polish (NEXT)
-- [ ] Upgrade to `react-native-track-player` for robust background audio
+- [x] Upgrade to `react-native-track-player` for robust background audio ✅
 - [ ] Extract real text from EPUB for Read-Along (not demo paragraphs)
 - [ ] Implement text-to-audio timestamp alignment algorithm
 - [ ] Add sleep timer and bookmarks UI
