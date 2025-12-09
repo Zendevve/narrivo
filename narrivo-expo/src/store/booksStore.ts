@@ -14,6 +14,7 @@ interface BooksState {
   updateBook: (id: string, updates: Partial<Book>) => void;
   deleteBook: (id: string) => void;
   addBookmark: (bookId: string, bookmark: Bookmark) => void;
+  deleteBookmark: (bookId: string, bookmarkId: string) => void;
   updateLastPosition: (bookId: string, position: number) => void;
   mergeBookFiles: (bookId: string, audioPath?: string, ebookPath?: string) => void;
   getBookById: (id: string) => Book | undefined;
@@ -78,6 +79,18 @@ export const useBooksStore = create<BooksState>((set, get) => ({
       const newBooks = state.books.map((book) => {
         if (book.id !== bookId) return book;
         const bookmarks = [...(book.bookmarks || []), bookmark];
+        return { ...book, bookmarks };
+      });
+      AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(newBooks));
+      return { books: newBooks };
+    });
+  },
+
+  deleteBookmark: (bookId, bookmarkId) => {
+    set((state) => {
+      const newBooks = state.books.map((book) => {
+        if (book.id !== bookId) return book;
+        const bookmarks = (book.bookmarks || []).filter((bm) => bm.id !== bookmarkId);
         return { ...book, bookmarks };
       });
       AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(newBooks));

@@ -31,7 +31,7 @@ const SLEEP_OPTIONS = [
 
 export const PlayerScreen: React.FC = () => {
   const navigation = useNavigation<PlayerScreenNavigationProp>();
-  const { addBookmark, updateLastPosition } = useBooksStore();
+  const { addBookmark, updateLastPosition, deleteBookmark, books } = useBooksStore();
 
   const [audioState, setAudioState] = useState<AudioState>({
     isPlaying: false,
@@ -42,6 +42,7 @@ export const PlayerScreen: React.FC = () => {
     error: null,
   });
   const [sleepModalVisible, setSleepModalVisible] = useState(false);
+  const [bookmarksModalVisible, setBookmarksModalVisible] = useState(false);
   const [sleepTimer, setSleepTimer] = useState<number | null>(null);
   const [sleepRemaining, setSleepRemaining] = useState<number | null>(null);
 
@@ -238,9 +239,15 @@ export const PlayerScreen: React.FC = () => {
         </TouchableOpacity>
 
         {/* Bookmark */}
-        <TouchableOpacity style={styles.actionBtn} onPress={handleAddBookmark}>
+        <TouchableOpacity
+          style={styles.actionBtn}
+          onPress={handleAddBookmark}
+          onLongPress={() => setBookmarksModalVisible(true)}
+        >
           <Text style={styles.actionIcon}>🔖</Text>
-          <Text style={styles.actionText}>Bookmark</Text>
+          <Text style={styles.actionText}>
+            {currentBook?.bookmarks?.length ? `${currentBook.bookmarks.length}` : 'Add'}
+          </Text>
         </TouchableOpacity>
 
         {/* Read-Along (if HYBRID) */}
@@ -276,6 +283,62 @@ export const PlayerScreen: React.FC = () => {
                 <Text style={styles.sleepOptionText}>{option.label}</Text>
               </TouchableOpacity>
             ))}
+          </View>
+        </View>
+      </Modal>
+
+      {/* Bookmarks Modal */}
+      <Modal
+        visible={bookmarksModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setBookmarksModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Bookmarks</Text>
+              <TouchableOpacity onPress={() => setBookmarksModalVisible(false)}>
+                <CloseIcon size={20} color={colors.white} />
+              </TouchableOpacity>
+            </View>
+            {(!currentBook?.bookmarks || currentBook.bookmarks.length === 0) ? (
+              <Text style={styles.emptyBookmarks}>No bookmarks yet. Tap the bookmark button to add one.</Text>
+            ) : (
+              currentBook.bookmarks.map((bm) => (
+                <View key={bm.id} style={styles.bookmarkItem}>
+                  <TouchableOpacity
+                    style={styles.bookmarkInfo}
+                    onPress={() => {
+                      audioService.seekTo(bm.position);
+                      setBookmarksModalVisible(false);
+                    }}
+                  >
+                    <Text style={styles.bookmarkLabel}>{bm.label || `Bookmark`}</Text>
+                    <Text style={styles.bookmarkTime}>{formatTime(bm.position)}</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.bookmarkDelete}
+                    onPress={() => {
+                      if (currentBook) {
+                        deleteBookmark(currentBook.id, bm.id);
+                      }
+                    }}
+                  >
+                    <Text style={styles.deleteText}>×</Text>
+                  </TouchableOpacity>
+                </View>
+              ))
+            )}
+            <TouchableOpacity
+              style={styles.addBookmarkBtn}
+              onPress={() => {
+                handleAddBookmark();
+                setBookmarksModalVisible(false);
+              }}
+            >
+              <Text style={styles.addBookmarkText}>+ Add Bookmark Here</Text>
+            </TouchableOpacity>
           </View>
         </View>
       </Modal>
@@ -457,5 +520,52 @@ const styles = StyleSheet.create({
     ...typography.body,
     color: colors.white,
     textAlign: 'center',
+  },
+  emptyBookmarks: {
+    ...typography.body,
+    color: colors.gray,
+    textAlign: 'center',
+    paddingVertical: spacing.lg,
+  },
+  bookmarkItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: spacing.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  bookmarkInfo: {
+    flex: 1,
+  },
+  bookmarkLabel: {
+    ...typography.body,
+    color: colors.white,
+  },
+  bookmarkTime: {
+    ...typography.label,
+    color: colors.lime,
+    fontFamily: 'monospace',
+  },
+  bookmarkDelete: {
+    width: 32,
+    height: 32,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  deleteText: {
+    fontSize: 24,
+    color: colors.gray,
+  },
+  addBookmarkBtn: {
+    marginTop: spacing.md,
+    paddingVertical: spacing.md,
+    backgroundColor: colors.lime,
+    borderRadius: borderRadius.md,
+  },
+  addBookmarkText: {
+    ...typography.label,
+    color: colors.black,
+    textAlign: 'center',
+    fontWeight: '700',
   },
 });
