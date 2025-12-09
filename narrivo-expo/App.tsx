@@ -4,12 +4,16 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { StyleSheet } from 'react-native';
 import { RootNavigator } from './src/navigation/RootNavigator';
 import { audioService } from './src/services/audioService';
+import { useProStore } from './src/store/proStore';
 
 export default function App() {
-  // Initialize TrackPlayer on app start
+  const loadProStatus = useProStore((s) => s.loadProStatus);
+
+  // Initialize services on app start
   useEffect(() => {
     audioService.setup();
-  }, []);
+    loadProStatus();
+  }, [loadProStatus]);
 
   return (
     <GestureHandlerRootView style={styles.root}>

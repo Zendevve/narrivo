@@ -12,6 +12,8 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { useBooksStore } from '../store/booksStore';
+import { useProStore } from '../store/proStore';
+import { UpgradeModal } from '../components/ProGate';
 import { colors, spacing, borderRadius, typography } from '../theme';
 import { Book } from '../types';
 import { AudioIcon, BookIcon, HybridIcon, DownloadIcon, CloseIcon, PlusIcon, GridIcon } from '../components/Icons';
@@ -63,6 +65,8 @@ type LibraryScreenNavigationProp = StackNavigationProp<LibraryStackParamList, 'L
 export const LibraryScreen: React.FC = () => {
   const navigation = useNavigation<LibraryScreenNavigationProp>();
   const { books, addBook, updateBook, deleteBook, loadBooks, isLoading } = useBooksStore();
+  const isPro = useProStore((s) => s.isPro);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [filter, setFilter] = useState<FilterType>('ALL');
   const [initialized, setInitialized] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
@@ -173,8 +177,20 @@ export const LibraryScreen: React.FC = () => {
 
     // Navigate based on book type
     if (book.type === 'HYBRID') {
-      // HYBRID books go to Read-Along
-      navigation.navigate('ReadAlong', { book });
+      // HYBRID books - Read-Along is Pro only
+      if (isPro) {
+        navigation.navigate('ReadAlong', { book });
+      } else {
+        // Show upgrade prompt, then fallback to Reader
+        Alert.alert(
+          'Pro Feature',
+          'Read-Along mode syncs audio with highlighted text. Upgrade to Pro to unlock!',
+          [
+            { text: 'Maybe Later', style: 'cancel', onPress: () => navigation.navigate('Reader', { book }) },
+            { text: 'Upgrade', onPress: () => setShowUpgradeModal(true) },
+          ]
+        );
+      }
     } else if (book.type === 'EBOOK') {
       // Pure ebooks go to Reader
       navigation.navigate('Reader', { book });
@@ -248,6 +264,12 @@ export const LibraryScreen: React.FC = () => {
           <BookGrid books={availableBooks} onSelect={handleSelectBook} onDownload={(b) => handleDownload(b)} onDelete={handleDelete} downloadProgress={downloadProgress} />
         </Section>
       )}
+
+      {/* Upgrade Modal */}
+      <UpgradeModal
+        visible={showUpgradeModal}
+        onClose={() => setShowUpgradeModal(false)}
+      />
     </ScrollView>
   );
 };

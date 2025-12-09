@@ -16,6 +16,8 @@ import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { PlayerStackParamList } from '../navigation/RootNavigator';
 import { useBooksStore } from '../store/booksStore';
+import { useProStore, FREE_BOOKMARK_LIMIT, PRO_FEATURES } from '../store/proStore';
+import { UpgradeModal } from '../components/ProGate';
 import { Bookmark } from '../types';
 
 type PlayerScreenNavigationProp = StackNavigationProp<PlayerStackParamList, 'NowPlaying'>;
@@ -32,6 +34,8 @@ const SLEEP_OPTIONS = [
 export const PlayerScreen: React.FC = () => {
   const navigation = useNavigation<PlayerScreenNavigationProp>();
   const { addBookmark, updateLastPosition, deleteBookmark, books } = useBooksStore();
+  const isPro = useProStore((s) => s.isPro);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
   const [audioState, setAudioState] = useState<AudioState>({
     isPlaying: false,
@@ -216,10 +220,16 @@ export const PlayerScreen: React.FC = () => {
           <TouchableOpacity
             key={rate}
             style={[styles.speedBtn, audioState.playbackRate === rate && styles.speedBtnActive]}
-            onPress={() => audioService.setRate(rate)}
+            onPress={() => {
+              if (rate !== 1.0 && !isPro) {
+                setShowUpgradeModal(true);
+                return;
+              }
+              audioService.setRate(rate);
+            }}
           >
             <Text style={[styles.speedText, audioState.playbackRate === rate && styles.speedTextActive]}>
-              {rate}x
+              {rate}x{rate !== 1.0 && !isPro ? ' 🔒' : ''}
             </Text>
           </TouchableOpacity>
         ))}
@@ -230,9 +240,15 @@ export const PlayerScreen: React.FC = () => {
         {/* Sleep Timer */}
         <TouchableOpacity
           style={[styles.actionBtn, sleepTimer ? styles.actionBtnActive : null]}
-          onPress={() => sleepTimer ? cancelSleepTimer() : setSleepModalVisible(true)}
+          onPress={() => {
+            if (!isPro && !sleepTimer) {
+              setShowUpgradeModal(true);
+              return;
+            }
+            sleepTimer ? cancelSleepTimer() : setSleepModalVisible(true);
+          }}
         >
-          <Text style={styles.actionIcon}>🌙</Text>
+          <Text style={styles.actionIcon}>🌙{!isPro ? ' 🔒' : ''}</Text>
           <Text style={[styles.actionText, sleepTimer ? styles.actionTextActive : null]}>
             {sleepRemaining ? formatSleepRemaining(sleepRemaining) : 'Sleep'}
           </Text>
@@ -342,6 +358,12 @@ export const PlayerScreen: React.FC = () => {
           </View>
         </View>
       </Modal>
+
+      {/* Upgrade Modal */}
+      <UpgradeModal
+        visible={showUpgradeModal}
+        onClose={() => setShowUpgradeModal(false)}
+      />
     </SafeAreaView>
   );
 };
